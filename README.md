@@ -15,10 +15,10 @@ gene3 1 2 3 4 5
 
 It should not have a header and separators should be either spaces or tabs.
 
-### Running CS3
+### Running SC3
 
 ```{R}
-library(CS3)
+library(SC3)
 run_cs3(filename, k.min:k.max)
 ```
 
