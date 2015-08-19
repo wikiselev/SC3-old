@@ -245,8 +245,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$svm_panel <- renderText({
                 svm.prediction <<- get_svm()
-                cat("\n")
-                cat("SVM finished!")
+                "SVM finished!"
+                # c("SVM finished!", "\n\n", svm.prediction)
             })
 
             output$de_genes <- renderPlot({

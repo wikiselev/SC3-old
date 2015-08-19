@@ -91,21 +91,21 @@ transformation <- function(dists, method) {
 }
 
 support_vector_machines1 <- function(teach, study, kern) {
-    cat("Dimensions of teacher:\n")
-    cat(dim(teach))
-    cat("\n")
-    cat("Dimensions of study:\n")
-    cat(dim(study))
-    cat("\n")
+#     cat("Dimensions of teacher:\n")
+#     cat(dim(teach))
+#     cat("\n")
+#     cat("Dimensions of study:\n")
+#     cat(dim(study))
+#     cat("\n")
 
     teach <- t(teach)
     labs <- factor(rownames(teach))
     rownames(teach) <- NULL
     # length(unique(colnames(teach)))
-    cat("Performing svm...\n")
+    # cat("Performing svm...\n")
     model <- tryCatch(svm(teach, labs, kernel = kern),
                       error = function(cond) return(NA))
-    cat("Performing prediction...\n")
+    # cat("Performing prediction...\n")
     # if(!is.na(model)) {
     pred <- predict(model, t(study))
     return(pred = pred)
