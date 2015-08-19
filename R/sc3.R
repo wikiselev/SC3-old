@@ -73,7 +73,7 @@ run_sc3 <- function(filename, ks) {
     registerDoParallel(cl, cores = detectCores() - 1)
 
     cat("3. Calculating distance matrices...\n")
-    dists = foreach(i = distances, .export = "dataset") %dopar% {
+    dists = foreach(i = distances) %dopar% {
         try({
                 if (i == "spearman") {
                     # there is no spearman distance method in 'proxy' package - have to define manually
@@ -92,7 +92,7 @@ run_sc3 <- function(filename, ks) {
 
     cat("4. Performing dimensionality reduction and kmeans clusterings...\n")
     labs = foreach(i = 1:dim(hash.table)[1],
-                   .combine = rbind, .export = "dists") %dopar% {
+                   .combine = rbind) %dopar% {
         try({
             norm_laplacian <- function(x, tau) {
                 x <- x + tau * matrix(1, dim(x)[1], dim(x)[2])
