@@ -1,0 +1,21 @@
+Package: SC3
+Type: Package
+Title: Single-Cell Consensus Clustering
+Version: 0.1
+Date: 2015-08-19
+Authors@R: person("Vladimir", "Kiselev", email = "vk6@sanger.ac.uk", role = c("aut", "cre"))
+Description: Interactive tool for clustering and analysis of single cell RNA-Seq data
+License: What license is it under?
+Depends:
+    e1071,
+    clue,
+    shiny,
+    parallel,
+    foreach,
+    doParallel,
+    grid,
+    gtable,
+    scales,
+    RColorBrewer,
+    ROCR
+LazyData: TRUE
