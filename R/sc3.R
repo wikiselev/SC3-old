@@ -71,17 +71,9 @@ run_sc3 <- function(filename, ks) {
     registerDoParallel(cl, cores = detectCores() - 1)
 
     cat("3. Calculating distance matrices...\n")
-    dists = foreach(i = distances) %dopar% {
+    dists = foreach(i = distances, .packages = "SC3") %dopar% {
         try({
-                if (i == "spearman") {
-                    # there is no spearman distance method in 'proxy' package - have to define manually
-                    as.matrix(1 - cor(dataset, method = "spearman"))
-                    # the output is bit different from Martin's results - need to figure out
-                } else if (i == "pearson") {
-                    as.matrix(1 - cor(dataset, method = "pearson"))
-                } else {
-                    as.matrix(dist(t(dataset), method = i))
-                }
+            calculate_distance(dataset, i)
         })
     }
     names(dists) <- distances
@@ -89,34 +81,10 @@ run_sc3 <- function(filename, ks) {
     pb <- txtProgressBar(min = 1, max = dim(hash.table)[1], style = 3)
 
     cat("4. Performing dimensionality reduction and kmeans clusterings...\n")
-    labs = foreach(i = 1:dim(hash.table)[1],
+    labs = foreach(i = 1:dim(hash.table)[1], .packages = "SC3",
                    .combine = rbind) %dopar% {
         try({
-            norm_laplacian <- function(x, tau) {
-                x <- x + tau * matrix(1, dim(x)[1], dim(x)[2])
-                D <- diag(colSums(x))
-                D1 <- D^(-0.5)
-                D1[D1 == Inf] <- 0
-                return(diag(dim(D)[1]) - D1 %*% x %*% D1)
-            }
-
-            dist <- get(hash.table[i, 1], dists)
-            method <- hash.table[i, 2]
-            if (method == "pca") {
-                t <- prcomp(dist, center = TRUE, scale. = TRUE)
-                t <- t$rotation
-            } else if (method == "spectral") {
-                L <- norm_laplacian(exp(-dist/max(dist)), 0)
-                # here need to sort eigenvectors by their eigenvalues in increasing order!
-                t <- eigen(L)$vectors[, order(eigen(L)$values)]
-            } else if (method == "spectral_reg") {
-                L <- norm_laplacian(exp(-dist/max(dist)), 1000)
-                # here need to sort eigenvectors by their eigenvalues in increasing order!
-                t <- eigen(L)$vectors[, order(eigen(L)$values)]
-            } else if (method == "mds") {
-                t <- cmdscale(dist, k = ncol(dist) - 1)
-            }
-
+            t <- transformation(get(hash.table[i, 1], dists), hash.table[i, 2])[[1]]
             s <- paste(kmeans(t[, 1:hash.table[i, 4]],
                          hash.table[i, 3],
                          iter.max = 1e+09,
@@ -153,26 +121,8 @@ run_sc3 <- function(filename, ks) {
         }
     }
 
-    cons = foreach(i = 1:dim(all.combinations)[1]) %dopar% {
+    cons = foreach(i = 1:dim(all.combinations)[1], .packages = "SC3") %dopar% {
         try({
-
-            # consensus clustering analysis Cluster-based similarity partitioning algorithm
-            consensus_clustering <- function(clusts) {
-                n.cells <- length(unlist(strsplit(clusts[1], " ")))
-                res <- matrix(0, nrow = n.cells, ncol = n.cells)
-                for (i in 1:length(clusts)) {
-                    t <- clusts[i]
-                    t <- as.numeric(unlist(strsplit(t, " ")))
-                    t <- as.matrix(dist(t))
-                    t[t != 0] <- -1
-                    t[t == 0] <- 1
-                    t[t == -1] <- 0
-                    res <- res + t
-                }
-                res <- res/i
-                return(res)
-            }
-
             d <- res[res$distan %in% strsplit(all.combinations[i, 1], " ")[[1]] &
                          res$dim.red %in% strsplit(all.combinations[i, 2], " ")[[1]] &
                          res$k == as.numeric(all.combinations[i, 3]), ]
