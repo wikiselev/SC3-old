@@ -11,7 +11,7 @@ run_sc3 <- function(filename, ks) {
         dataset <- dataset[ , 2:dim(dataset)[2]]
     }
 
-    original.dataset <- dataset
+    # original.dataset <- dataset
 
 #     # hard cell filter
 #     # more than 2000 genes have to be expressed in each cell
@@ -22,7 +22,7 @@ run_sc3 <- function(filename, ks) {
 #         return()
 #     }
 
-    svm.num.cells <- 1000
+    svm.num.cells <- 50
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
@@ -50,7 +50,8 @@ run_sc3 <- function(filename, ks) {
         cat("\n")
         cat("\n")
         working.sample <- sample(1:dim(dataset)[2], svm.num.cells)
-        study.dataset <- dataset[ , setdiff(1:dim(dataset)[2], working.sample)]
+        study.sample <- setdiff(1:dim(dataset)[2], working.sample)
+        study.dataset <- dataset[ , study.sample]
         dataset <- dataset[, working.sample]
     }
 
@@ -152,5 +153,5 @@ run_sc3 <- function(filename, ks) {
 
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells, original.dataset)
+                   dataset, study.dataset, svm.num.cells, working.sample, study.sample)
 }

@@ -1,4 +1,4 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, original.dataset) {
+run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample) {
 
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
@@ -80,7 +80,6 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
                                       as.numeric(cons.table[ , 3]) == input$clusters, 4]
-                colnames(original.dataset) <<- cutree(res[[1]][[3]], k = input$clusters)
                 return(res[[1]])
             })
 
@@ -187,6 +186,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
                     res <- get_marker_genes(d, as.numeric(colnames(d)))
                     mark.res <<- res
+                    colnames(mark.res) <<- c("AUC", "clusts")
 
                     res1 <- NULL
                     for(i in unique(res$Group)) {
@@ -244,7 +244,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             })
 
             output$svm_panel <- renderText({
-                get_svm()
+                svm.prediction <<- get_svm()
+                cat("\n")
+                cat("SVM finished!")
             })
 
             output$de_genes <- renderPlot({
@@ -285,11 +287,15 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-labels.csv")
                 },
                 content = function(file) {
-                    if(dim(dataset)[2] > svm.num.cells) {
-                        write.table(get_svm(), file = file)
-                    } else {
-                        write.csv(original.dataset, file = file)
+                    hc <- get_consensus()[[3]]
+                    clusts <- cutree(hc, k = input$clusters)
+                    if(dim(study.dataset)[2] > 0) {
+                        names(clusts) <- working.sample
+                        names(svm.prediction) <- study.sample
+                        clusts <- c(clusts, svm.prediction)
+                        clusts <- clusts[order(as.numeric(names(clusts)))]
                     }
+                    write.table(t(data.frame(clusts)), file = file)
                 }
             )
 
