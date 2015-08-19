@@ -22,7 +22,7 @@ run_sc3 <- function(filename, ks) {
 #         return()
 #     }
 
-    svm.num.cells <- 50
+    svm.num.cells <- 1000
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
