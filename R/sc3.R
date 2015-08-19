@@ -1,28 +1,26 @@
 run_sc3 <- function(filename, ks) {
-    if(filename %in% c("quake", "quake_all_fpkm", "quake_all_read", "sandberg", "sandberg_all_read", "sandberg_all_rpkm",
-                       "bernstein", "linnarsson", "zhong", "kirschner")) {
+    if(filename == "quake_all_fpkm") {
         dataset <- get(filename)
     } else {
-        dataset <- read.table(filename, header = T)
-        if(filename == "../clustering/tallulah/data/Bergiers_Exp1_FeatureCounts_BaseGenomeAnnotations_No_Multimapping.out" |
-           filename == "../clustering/tallulah/data/Bergiers_Exp2_FeatureCounts_BaseGenomeAnnotations_No_Multimapping.out" |
-           filename == "../clustering/tallulah/data/Bergiers_Exp1_FeatureCounts_BaseGenomeAnnotations_No_Multimapping_RUVnorm.txt" |
-           filename == "../clustering/tallulah/data/Bergiers_Exp2_FeatureCounts_BaseGenomeAnnotations_No_Multimapping_RUVnorm.txt" |
-           filename == "../clustering/tallulah/data/Bergiers_Exp1_FeatureCounts_BaseGenomeAnnotations_No_Multimapping_SFnorm.txt" |
-           filename == "../clustering/tallulah/data/Bergiers_Exp2_FeatureCounts_BaseGenomeAnnotations_No_Multimapping_SFnorm.txt") {
-            rownames(dataset) <- dataset[, 1]
-            dataset <- dataset[ , 2:dim(dataset)[2]]
+        if(!grepl("csv", filename)) {
+            dataset <- read.table(filename)
+        } else if(grepl("csv", filename)) {
+            dataset <- read.csv(filename, header = F)
         }
+        rownames(dataset) <- dataset[, 1]
+        dataset <- dataset[ , 2:dim(dataset)[2]]
     }
 
-    # hard cell filter
-    # more than 2000 genes have to be expressed in each cell
-    dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
+    original.dataset <- dataset
 
-    if(dim(dataset)[2] == 0) {
-        cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
-        return()
-    }
+#     # hard cell filter
+#     # more than 2000 genes have to be expressed in each cell
+#     dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
+#
+#     if(dim(dataset)[2] == 0) {
+#         cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
+#         return()
+#     }
 
     svm.num.cells <- 1000
     distances <- c("euclidean", "pearson", "spearman")
@@ -204,5 +202,5 @@ run_sc3 <- function(filename, ks) {
 
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells)
+                   dataset, study.dataset, svm.num.cells, original.dataset)
 }

@@ -1,4 +1,4 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells) {
+run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, original.dataset) {
 
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
@@ -33,11 +33,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                    choices = dimensionality.reductions,
                                    selected = dimensionality.reductions[1]),
 
-                if(dim(dataset)[2] + dim(study.dataset)[2] > svm.num.cells) {
+                if(dim(study.dataset)[2] > 0) {
                     h4("1+. SVM")},
-                if(dim(dataset)[2] + dim(study.dataset)[2] > svm.num.cells) {
+                if(dim(study.dataset)[2] > 0) {
                     p("Press this button when you have found the best clustering\n\n")},
-                if(dim(dataset)[2] + dim(study.dataset)[2] > svm.num.cells) {
+                if(dim(study.dataset)[2] > 0) {
                     actionButton("svm", label = "Run SVM")},
 
                 h4("2. Gene identificatiion"),
@@ -48,7 +48,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
                 h4("3. Save results"),
                 p("\n\n"),
-                downloadLink('datalink', label = "Save cell labels")
+                downloadLink('labs', label = "Save cell labels"),
+                p("\n\n"),
+                downloadLink('markers', label = "Save cluster markers"),
+                p("\n\n"),
+                downloadLink('de', label = "Save de genes")
             ),
             mainPanel(
                 uiOutput('mytabs')
@@ -76,6 +80,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
                                       as.numeric(cons.table[ , 3]) == input$clusters, 4]
+                colnames(original.dataset) <<- cutree(res[[1]][[3]], k = input$clusters)
                 return(res[[1]])
             })
 
@@ -130,6 +135,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     }
 
                     res <- kruskal_statistics(d, colnames(d))
+                    de.res <<- res
 
                     res <- head(res, 68)
                     d <- d[names(res), ]
@@ -180,6 +186,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     }
 
                     res <- get_marker_genes(d, as.numeric(colnames(d)))
+                    mark.res <<- res
 
                     res1 <- NULL
                     for(i in unique(res$Group)) {
@@ -273,18 +280,37 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 HTML(paste0(labs))
             })
 
-            output$datalink <- downloadHandler(
+            output$labs <- downloadHandler(
                 filename = function() {
                     paste0("k=", input$clusters, "-labels.csv")
                 },
                 content = function(file) {
-                    if(dim(dataset)[2] > 20) {
+                    if(dim(dataset)[2] > svm.num.cells) {
                         write.table(get_svm(), file = file)
                     } else {
-                        write.table(get_consensus()[[2]][[1]], file = file)
+                        write.csv(original.dataset, file = file)
                     }
                 }
             )
+
+            output$markers <- downloadHandler(
+                filename = function() {
+                    paste0("k=", input$clusters, "-markers.csv")
+                },
+                content = function(file) {
+                    write.csv(mark.res, file = file)
+                }
+            )
+
+            output$de <- downloadHandler(
+                filename = function() {
+                    paste0("k=", input$clusters, "-de-genes.csv")
+                },
+                content = function(file) {
+                    write.csv(de.res, file = file)
+                }
+            )
+
         }
     )
 }
