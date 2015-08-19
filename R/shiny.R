@@ -282,7 +282,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$labs <- downloadHandler(
                 filename = function() {
-                    paste0("k=", input$clusters, "-labels.csv")
+                    paste0("k-", input$clusters, "-labels.csv")
                 },
                 content = function(file) {
                     if(dim(dataset)[2] > svm.num.cells) {
@@ -295,7 +295,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$markers <- downloadHandler(
                 filename = function() {
-                    paste0("k=", input$clusters, "-markers.csv")
+                    paste0("k-", input$clusters, "-markers.csv")
                 },
                 content = function(file) {
                     write.csv(mark.res, file = file)
@@ -304,7 +304,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$de <- downloadHandler(
                 filename = function() {
-                    paste0("k=", input$clusters, "-de-genes.csv")
+                    paste0("k-", input$clusters, "-de-genes.csv")
                 },
                 content = function(file) {
                     write.csv(de.res, file = file)
