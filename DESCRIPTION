@@ -6,7 +6,7 @@ Date: 2015-08-19
 Authors@R: person("Vladimir", "Kiselev", email = "vk6@sanger.ac.uk", role = c("aut", "cre"))
 Description: Interactive tool for clustering and analysis of single cell RNA-Seq data
 License: What license is it under?
-Imports:
+Depends:
     e1071,
     clue,
     shiny,
