@@ -2,7 +2,7 @@
 
 ```{R}
 install.packages("devtools")
-devtools::install_github("wikiselev/SC3")
+devtools::install_github("hemberg-lab/SC3")
 ```
 
 ### Input format
