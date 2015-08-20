@@ -9,7 +9,7 @@ devtools::install_github("hemberg-lab/SC3")
 
 ### 2. Test run
 
-To test that the package has been installed successfully please run SC3 on a toy dataset:
+To test that the package has been installed successfully please run SC3 on a [published dataset](http://www.nature.com/nature/journal/v509/n7500/full/nature13173.html):
 
 ```{R}
 library(SC3)
