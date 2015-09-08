@@ -1,4 +1,4 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample) {
+run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names) {
 
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
@@ -16,7 +16,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     shinyApp(
         ui = fluidPage(
             headerPanel(
-                HTML("SC<sup>3</sup> - Single-Cell Consensus Clustering")
+                div(paste0("Clustering of ", filename), style = "font-size:80%")
             ),
             sidebarPanel(
                 h4("1. Clustering"),
@@ -306,12 +306,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     hc <- get_consensus()[[3]]
                     clusts <- cutree(hc, k = input$clusters)
                     if(dim(study.dataset)[2] > 0) {
-                        names(clusts) <- working.sample
-                        names(svm.prediction) <- study.sample
                         clusts <- c(clusts, svm.prediction)
-                        clusts <- clusts[order(as.numeric(names(clusts)))]
                     }
-                    write.table(t(data.frame(clusts)), file = file)
+                    write.table(t(data.frame(cell.names, clusts)), file = file, col.names = F, quote = F)
                 }
             )
 

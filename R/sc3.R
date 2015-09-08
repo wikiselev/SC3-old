@@ -11,7 +11,7 @@ run_sc3 <- function(filename, ks) {
         } else if(grepl("csv", filename)) {
             dataset <- read.csv(filename, header = F)
         }
-        rownames(dataset) <- dataset[, 1]
+        # rownames(dataset) <- dataset[, 1]
         dataset <- dataset[ , 2:dim(dataset)[2]]
     }
 
@@ -47,6 +47,11 @@ run_sc3 <- function(filename, ks) {
         dataset <- log2(1 + dataset)
     }
 
+    filename <- basename(filename)
+
+    cell.names <- c(1:dim(dataset)[2])
+    cell.names <- colnames(dataset)
+
     study.dataset <- data.frame()
     if(dim(dataset)[2] > svm.num.cells) {
         cat("\n")
@@ -57,6 +62,14 @@ run_sc3 <- function(filename, ks) {
         study.sample <- setdiff(1:dim(dataset)[2], working.sample)
         study.dataset <- dataset[ , study.sample]
         dataset <- dataset[, working.sample]
+
+        study.cell.names <- study.sample
+        study.cell.names <- colnames(study.dataset)
+
+        cell.names <- working.sample
+        cell.names <- colnames(dataset)
+
+        cell.names <- c(cell.names, study.cell.names)
     }
 
     n.cells <- dim(dataset)[2]
@@ -159,5 +172,5 @@ run_sc3 <- function(filename, ks) {
 
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells, working.sample, study.sample)
+                   dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names)
 }

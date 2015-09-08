@@ -18,5 +18,6 @@ Depends:
     scales,
     RColorBrewer,
     colorspace,
-    ROCR
+    ROCR,
+    cluster
 LazyData: TRUE
