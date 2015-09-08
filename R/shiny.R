@@ -62,15 +62,17 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             output$mytabs = renderUI({
                 if(dim(study.dataset)[2] > 0) {
                     myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
-                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
+                                   tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
+                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
                                    tabPanel("SVM (1+)", textOutput('svm_panel')),
                                    tabPanel("DE genes (2)", plotOutput('de_genes')),
                                    tabPanel("Marker genes (2)", plotOutput('mark_genes')))
                 } else {
                     myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
-                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
+                                   tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
+                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
                                    tabPanel("DE genes (2)", plotOutput('de_genes')),
                                    tabPanel("Marker genes (2)", plotOutput('mark_genes')))
                 }
@@ -89,6 +91,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                       as.numeric(cons.table[ , 3]) == (input$clusters - 1), 4]
                 return(res[[1]])
             })
+
+            output$silh <- renderPlot({
+                d <- get_consensus()
+                silh <- d[[4]]
+                withProgress(message = 'Plotting...', value = 0, {
+                    plot(silh)
+                })
+            }, height = plot.height, width = plot.width)
 
             output$plot <- renderPlot({
                 d <- get_consensus()

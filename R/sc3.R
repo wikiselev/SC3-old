@@ -122,7 +122,7 @@ run_sc3 <- function(filename, ks) {
         }
     }
 
-    cons = foreach(i = 1:dim(all.combinations)[1], .packages = "SC3") %dopar% {
+    cons = foreach(i = 1:dim(all.combinations)[1], .packages = c("SC3", "cluster")) %dopar% {
         try({
             d <- res[res$distan %in% strsplit(all.combinations[i, 1], " ")[[1]] &
                          res$dim.red %in% strsplit(all.combinations[i, 2], " ")[[1]] &
@@ -134,6 +134,8 @@ run_sc3 <- function(filename, ks) {
             clust <- hclust(diss)
             clusts <- cutree(clust, k = as.numeric(all.combinations[i, 3]))
 
+            silh <- silhouette(clusts, diss)
+
             labs <- NULL
             for(j in unique(clusts[clust$order])) {
                 labs <- rbind(labs, paste(names(clusts[clusts == j]), collapse = " "))
@@ -142,7 +144,7 @@ run_sc3 <- function(filename, ks) {
             labs <- as.data.frame(labs)
             colnames(labs) <- "Labels"
 
-            return(list(dat, labs, clust))
+            return(list(dat, labs, clust, silh))
         })
     }
 
