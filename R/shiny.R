@@ -124,7 +124,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                              cutree_cols = input$clusters,
                              color = colour.pallete,
                              kmeans_k = 100, show_rownames = F, show_colnames = F,
-                             treeheight_col = 0)
+                             treeheight_col = 0,
+                             main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
+                                     Only the values of the cluster centers are shown.")
                 })
             }, height = plot.height, width = plot.width)
 
