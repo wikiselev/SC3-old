@@ -20,10 +20,12 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             ),
             sidebarPanel(
                 h4("1. Clustering"),
-                sliderInput("clusters", label = "k",
+                sliderInput("clusters", label = "Number of clusters k",
                             min = min(as.numeric(unlist(cons.table[,3]))) + 1,
                             max = max(as.numeric(unlist(cons.table[,3]))),
-                            value = min(as.numeric(unlist(cons.table[,3])))),
+                            value = min(as.numeric(unlist(cons.table[,3]))),
+                            step = 1,
+                            animate = animationOptions(interval = 2000, loop = F)),
 
                 checkboxGroupInput("distance", label = "Distance metrics",
                                    choices = distances,
