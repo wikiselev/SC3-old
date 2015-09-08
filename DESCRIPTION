@@ -17,5 +17,6 @@ Depends:
     gtable,
     scales,
     RColorBrewer,
+    colorspace,
     ROCR
 LazyData: TRUE

@@ -276,7 +276,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 d1 <- get_consensus_1()[[2]]
 
                 labs1 <- list()
-                cols <- brewer.pal(input$clusters - 1, "Paired")
+                cols <- iwanthue(input$clusters - 1)
                 for(i in 1:(input$clusters - 1)) {
                     col <- cols[i]
                     ind <- unlist(strsplit(as.character(d1[i, ]), " "))
