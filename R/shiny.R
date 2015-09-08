@@ -54,7 +54,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 p("\n\n"),
                 downloadLink('markers', label = "Save cluster markers"),
                 p("\n\n"),
-                downloadLink('de', label = "Save de genes")
+                downloadLink('de', label = "Save de genes"),
+
+                h4("4. Stop SC3"),
+                p("\n\n"),
+                actionButton("stop_app", label = "Stop")
             ),
             mainPanel(
                 uiOutput('mytabs')
@@ -255,6 +259,10 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     colnames(study.dataset) <<- prediction
                     return(prediction)
                 })
+            })
+
+            observeEvent(input$stop_app, {
+                stopApp(returnValue = NULL)
             })
 
             output$svm_panel <- renderText({
