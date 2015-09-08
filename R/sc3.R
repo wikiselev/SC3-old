@@ -1,4 +1,8 @@
 run_sc3 <- function(filename, ks) {
+
+    # set seed to be able to reproduce the results
+    set.seed(1)
+
     if(filename == "quake_all_fpkm") {
         dataset <- get(filename)
     } else {
