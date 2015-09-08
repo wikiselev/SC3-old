@@ -282,7 +282,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                         labs1[[j]] <- paste0("<font color=\"", col, "\">", j, "</font>")
                     }
                 }
-                labs <- "<br/>"
+                labs <- paste0("<br/><font size=\"3\">Colours correspond to clusters obtained by clustering the data by <b>",
+                               input$clusters - 1, "</b> clusters</font><br/>")
+                labs <- c(labs, "<br/>")
                 for(i in 1:input$clusters) {
                     ind <- unlist(strsplit(as.character(d[i, ]), " "))
                     for(j in ind) {
