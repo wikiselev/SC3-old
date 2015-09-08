@@ -13,6 +13,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     plot.width <- 600
     plot.height <- 600
 
+    de.res <- NULL
+    mark.res <- NULL
+
     shinyApp(
         ui = fluidPage(
             headerPanel(
@@ -52,9 +55,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 p("\n\n"),
                 downloadLink('labs', label = "Save cell labels"),
                 p("\n\n"),
-                downloadLink('markers', label = "Save cluster markers"),
+                downloadLink('de', label = "Save de genes"),
                 p("\n\n"),
-                downloadLink('de', label = "Save de genes")
+                downloadLink('markers', label = "Save cluster markers")
             ),
             mainPanel(
                 uiOutput('mytabs')
@@ -317,6 +320,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-markers-", filename)
                 },
                 content = function(file) {
+                    validate(
+                        need(try(!is.null(mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
+                    )
                     write.csv(mark.res, file = file)
                 }
             )
@@ -326,6 +332,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-de-genes-", filename)
                 },
                 content = function(file) {
+                    validate(
+                        need(try(!is.null(de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
+                    )
                     write.csv(de.res, file = file)
                 }
             )

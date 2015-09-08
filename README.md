@@ -22,11 +22,12 @@ It should open SC3 in a browser window without providing any error. If there is 
 
 To run SC3 on your own data one need to prepare an input file with an expression matrix. The expression matrix should be of the following format:
 
+cell1 cell2 cell3 cell4 cell5
 gene1 1 2 3 4 5  
 gene2 1 2 3 4 5  
 gene3 1 2 3 4 5  
 
-It should not have a header and separators should be either spaces or tabs. If separators are commas (,) and the file is in the proper csv format, then the extension of the file should be .csv.
+The first row of the expression matrix should contain one fewer field than all other rows and separators should be either spaces or tabs. If separators are commas (,) and the file is in the proper csv format, then the extension of the file should be .csv.
 
 ### 4. Running SC3
 
