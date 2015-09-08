@@ -55,10 +55,6 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 downloadLink('markers', label = "Save cluster markers"),
                 p("\n\n"),
                 downloadLink('de', label = "Save de genes")
-
-#                 h4("4. Stop SC3"),
-#                 p("\n\n"),
-#                 actionButton("stop_app", label = "Stop")
             ),
             mainPanel(
                 uiOutput('mytabs')
@@ -261,10 +257,6 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 })
             })
 
-#             observeEvent(input$stop_app, {
-#                 stopApp(returnValue = NULL)
-#             })
-
             output$svm_panel <- renderText({
                 svm.prediction <<- get_svm()
                 "SVM finished!"
@@ -308,7 +300,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$labs <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-labels.csv")
+                    paste0("k-", input$clusters, "-labels-", filename)
                 },
                 content = function(file) {
                     hc <- get_consensus()[[3]]
@@ -325,7 +317,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$markers <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-markers.csv")
+                    paste0("k-", input$clusters, "-markers-", filename)
                 },
                 content = function(file) {
                     write.csv(mark.res, file = file)
@@ -334,7 +326,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$de <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-de-genes.csv")
+                    paste0("k-", input$clusters, "-de-genes-", filename)
                 },
                 content = function(file) {
                     write.csv(de.res, file = file)
@@ -342,7 +334,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             )
 
             session$onSessionEnded(function() { stopApp() } )
-        }
+        },
+        options = list(launch.browser = T)
     )
 
 }
