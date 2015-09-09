@@ -22,7 +22,7 @@ It should open SC3 in a browser window without providing any error. If there is 
 
 To run SC3 on your own data one need to prepare an input file with an expression matrix. The expression matrix should be of the following format:
 
-cell1 cell2 cell3 cell4 cell5
+cell1 cell2 cell3 cell4 cell5  
 gene1 1 2 3 4 5  
 gene2 1 2 3 4 5  
 gene3 1 2 3 4 5  
