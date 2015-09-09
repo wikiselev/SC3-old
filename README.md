@@ -27,7 +27,7 @@ gene1 1 2 3 4 5
 gene2 1 2 3 4 5  
 gene3 1 2 3 4 5  
 
-The first row of the expression matrix should contain one fewer field than all other rows and separators should be either spaces or tabs. If separators are commas (,) and the file is in the proper csv format, then the extension of the file should be .csv.
+The first row of the expression matrix (with cell labels, e.g. cell1, cell2, etc.) should contain one fewer field than all other rows. Separators should be either spaces or tabs. If separators are commas (,) then the extension of the file must be .csv.
 
 ### 4. Running SC3
 

@@ -9,10 +9,8 @@ run_sc3 <- function(filename, ks) {
         if(!grepl("csv", filename)) {
             dataset <- read.table(filename)
         } else if(grepl("csv", filename)) {
-            dataset <- read.csv(filename, header = F)
+            dataset <- read.csv(filename)
         }
-        # rownames(dataset) <- dataset[, 1]
-        dataset <- dataset[ , 2:dim(dataset)[2]]
     }
 
     # original.dataset <- dataset
