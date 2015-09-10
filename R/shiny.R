@@ -19,7 +19,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     shinyApp(
         ui = fluidPage(
             headerPanel(
-                div(paste0("Clustering of ", filename), style = "font-size:80%")
+                paste0("Clustering of ", filename)
             ),
             sidebarPanel(
                 h4("1. Clustering"),
@@ -55,7 +55,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 p("\n\n"),
                 downloadLink('labs', label = "Save cell labels"),
                 p("\n\n"),
-                downloadLink('de', label = "Save de genes"),
+                downloadLink('de', label = "Save DE genes"),
                 p("\n\n"),
                 downloadLink('markers', label = "Save cluster markers")
             ),
@@ -303,7 +303,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             output$labs <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-labels-", filename)
+                    paste0("k-", input$clusters, "-labels-", filename, ".csv")
                 },
                 content = function(file) {
                     hc <- get_consensus()[[3]]
@@ -311,31 +311,38 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     if(dim(study.dataset)[2] > 0) {
                         clusts <- c(clusts, svm.prediction)
                     }
-                    write.table(t(data.frame(cell.names, clusts)), file = file, col.names = F, quote = F)
+                    out <- t(data.frame(cell.names, clusts))
+                    rownames(out) <- c("original.cell.labels", "calculated.cell.labels")
+                    write.table(out, file = file, col.names = F, quote = F, sep = ",")
                 }
             )
 
             output$markers <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-markers-", filename)
+                    paste0("k-", input$clusters, "-markers-", filename, ".csv")
                 },
                 content = function(file) {
                     validate(
                         need(try(!is.null(mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
                     )
-                    write.csv(mark.res, file = file)
+                    out <- data.frame(genes = rownames(mark.res), AUC = mark.res[,1],
+                                      cluster.index = mark.res[,2])
+                    write.table(out, file = file, row.names = F, quote = F, sep = ",")
                 }
             )
 
             output$de <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-de-genes-", filename)
+                    paste0("k-", input$clusters, "-de-genes-", filename, ".csv")
                 },
                 content = function(file) {
                     validate(
                         need(try(!is.null(de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
                     )
-                    write.csv(de.res, file = file)
+                    nams <- names(de.res)
+                    names(de.res) <- NULL
+                    out <- data.frame(genes = nams, p.value = de.res)
+                    write.table(out, file = file, row.names = F, quote = F, sep = ",")
                 }
             )
 
