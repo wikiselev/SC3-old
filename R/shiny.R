@@ -10,8 +10,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     names(dimensionality.reductions) <- dimensionality.reductions
 
     colour.pallete <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(median(as.numeric(unlist(cons.table[,3]))))
-    plot.width <- 600
-    plot.height <- 600
+    plot.width <- 800
+    plot.height <- 800
 
     de.res <- NULL
     mark.res <- NULL
@@ -151,6 +151,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     }
 
                     res <- kruskal_statistics(d, colnames(d))
+
+                    validate(
+                        need(try(length(res) != 0), "\nUnable to find differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
+                    )
+
                     de.res <<- res
 
                     res <- head(res, 68)
