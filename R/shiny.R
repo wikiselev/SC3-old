@@ -153,7 +153,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     res <- kruskal_statistics(d, colnames(d))
 
                     validate(
-                        need(try(length(res) != 0), "\nUnable to find differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
+                        need(try(length(res) != 0), "\nUnable to find significantly (p-value < 0.05) differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
                     )
 
                     de.res <<- res
@@ -207,6 +207,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     }
 
                     res <- get_marker_genes(d, as.numeric(colnames(d)))
+
+                    validate(
+                        need(try(length(res) != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
+                    )
+
                     mark.res <<- res
                     colnames(mark.res) <<- c("AUC", "clusts")
 
