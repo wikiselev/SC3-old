@@ -1,4 +1,4 @@
-run_sc3 <- function(filename, ks) {
+run_sc3 <- function(filename, ks, cell.filter = F) {
 
     # set seed to be able to reproduce the results
     set.seed(1)
@@ -13,22 +13,21 @@ run_sc3 <- function(filename, ks) {
         }
     }
 
-    # original.dataset <- dataset
-
-#     # hard cell filter
-#     # more than 2000 genes have to be expressed in each cell
-#     dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
-#
-#     if(dim(dataset)[2] == 0) {
-#         cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
-#         return()
-#     }
+    # more than 2000 genes have to be expressed in each cell
+    if(cell.filter) {
+        cat("Preliminary cell filtering...\n")
+        dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
+        if(dim(dataset)[2] == 0) {
+            cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
+            return()
+        }
+    }
 
     svm.num.cells <- 1000
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
-    cat("1. Preliminary gene filtering...\n")
+    cat("Preliminary gene filtering...\n")
     filter1.params <- filter1_params(dataset)
     min.cells <- filter1.params$min.cells
     max.cells <- filter1.params$max.cells
@@ -40,7 +39,7 @@ run_sc3 <- function(filename, ks) {
         return()
     }
 
-    cat("2. Log2-transforming data...\n")
+    cat("Log2-transforming data...\n")
     if(!is.character(filename)) {
         if(deparse(substitute(filename)) != "bernstein") {
             dataset <- log2(1 + dataset)
@@ -94,7 +93,7 @@ run_sc3 <- function(filename, ks) {
     cl <- makeCluster(detectCores() - 1, outfile="")
     registerDoParallel(cl, cores = detectCores() - 1)
 
-    cat("3. Calculating distance matrices...\n")
+    cat("Calculating distance matrices...\n")
     dists = foreach(i = distances, .packages = "SC3") %dopar% {
         try({
             calculate_distance(dataset, i)
@@ -104,7 +103,7 @@ run_sc3 <- function(filename, ks) {
 
     pb <- txtProgressBar(min = 1, max = dim(hash.table)[1], style = 3)
 
-    cat("4. Performing dimensionality reduction and kmeans clusterings...\n")
+    cat("Performing dimensionality reduction and kmeans clusterings...\n")
     labs = foreach(i = 1:dim(hash.table)[1], .packages = "SC3",
                    .combine = rbind) %dopar% {
         try({
@@ -125,7 +124,7 @@ run_sc3 <- function(filename, ks) {
     res$labs <- as.character(res$labs)
     rownames(res) <- NULL
 
-    cat("5. Computing consensus matrix and labels...\n")
+    cat("Computing consensus matrix and labels...\n")
     all.combinations <- NULL
     for(k in c(min(ks) - 1, ks)) {
         for(i in 1:length(distances)) {
