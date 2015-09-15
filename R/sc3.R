@@ -3,8 +3,8 @@ run_sc3 <- function(filename, ks) {
     # set seed to be able to reproduce the results
     set.seed(1)
 
-    if(filename == "quake_all_fpkm") {
-        dataset <- get(filename)
+    if(!is.character(filename)) {
+        dataset <- filename
     } else {
         if(!grepl("csv", filename)) {
             dataset <- read.table(filename)
@@ -41,11 +41,19 @@ run_sc3 <- function(filename, ks) {
     }
 
     cat("2. Log2-transforming data...\n")
-    if(filename != "bernstein") {
+    if(!is.character(filename)) {
+        if(deparse(substitute(filename)) != "bernstein") {
+            dataset <- log2(1 + dataset)
+        }
+    } else {
         dataset <- log2(1 + dataset)
     }
 
-    filename <- basename(filename)
+    if(!is.character(filename)) {
+        filename <- deparse(substitute(filename))
+    } else {
+        filename <- basename(filename)
+    }
 
     cell.names <- c(1:dim(dataset)[2])
     cell.names <- colnames(dataset)
