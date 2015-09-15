@@ -34,10 +34,11 @@ run_sc3(dataset, 2:5)
 
 To run SC3 on an input file containing an expression matrix one need to preprocess the input file so that it looks as follows:
 
-cell1 cell2 cell3 cell4 cell5  
-gene1 1 2 3 4 5  
-gene2 1 2 3 4 5  
-gene3 1 2 3 4 5  
+|  | cell1 | cell2 | cell3 | cell4 | cell5 
+--- | --- | --- | --- | --- | ---
+| __gene1__ | 1 | 2 | 3 | 4 | 5 
+| __gene2__ | 1 | 2 | 3 | 4 | 5 
+| __gene3__ | 1 | 2 | 3 | 4 | 5 
 
 The first row of the expression matrix (with cell labels, e.g. cell1, cell2, etc.) should contain one fewer field than all other rows. Separators should be either spaces or tabs. If separators are commas (,) then the extension of the file must be .csv. If a path to your input file is "/path/to/input/file/expression-matrix.txt", to run it:
 
