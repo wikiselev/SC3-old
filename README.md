@@ -12,6 +12,7 @@ devtools::install_github("hemberg-lab/SC3")
 To test that the package has been installed successfully please run SC3 on a [published dataset](http://www.nature.com/nature/journal/v509/n7500/full/nature13173.html):
 
 ```{R}
+library(SC3)
 run_sc3(quake_all_fpkm, 3:7)
 ```
 
@@ -20,7 +21,6 @@ It should open SC3 in a browser window without providing any error. If there is 
 ### 3. Running SC3
 
 ```{R}
-library(SC3)
 run_sc3(dataset, k.min:k.max)
 ```
 
