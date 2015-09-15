@@ -13,7 +13,7 @@ To test that the package has been installed successfully please run SC3 on a [pu
 
 ```{R}
 library(SC3)
-run_sc3(quake_all_fpkm, 3:7)
+run_sc3(quake_all_fpkm, 3:7, TRUE)
 ```
 
 It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
@@ -21,13 +21,19 @@ It should open SC3 in a browser window without providing any error. If there is 
 ### 3. Running SC3
 
 ```{R}
-run_sc3(dataset, k.min:k.max)
+run_sc3(dataset, k.min:k.max, cell.filter)
 ```
 
-where __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix, __k.min__ is the minimum number of clusters, __k.max__ is the maximum number of clusters. For example, if you would like to check clustering of your __dataset__ for __k__ from 2 to 5, then you need to run the following:
+* __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix
+* __k.min__ is the minimum number of clusters
+* __k.max__ is the maximum number of clusters.
+* (optional) __cell.filter__ is used to filter cells that express less than 2000 genes (_lowly expressed cells_). By default it is OFF. To switch it ON please use __TRUE__ value as in the __Test run__ above. Should be used if it is not possible to properly cluster original cells - filtering of _lowly expressed cells_ usually makes clustering better.
+
+Example: if you would like to check clustering of your __dataset__ for __k__ from 2 to 5, then you need to run the following:
 
 ```{R}
-run_sc3(dataset, 2:5)
+run_sc3(dataset, 2:5)       # without filtering of lowly expressed cells
+run_sc3(dataset, 2:5, TRUE) # with filtering of lowly expressed cells
 ```
 
 ### 4. Input file format
