@@ -7,9 +7,9 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
         dataset <- filename
     } else {
         if(!grepl("csv", filename)) {
-            dataset <- read.table(filename)
+            dataset <- read.table(filename, check.names = F)
         } else if(grepl("csv", filename)) {
-            dataset <- read.csv(filename)
+            dataset <- read.csv(filename, check.names = F)
         }
     }
 
