@@ -97,7 +97,7 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
     registerDoParallel(cl, cores = detectCores() - 1)
 
     cat("Calculating distance matrices...\n")
-    dists = foreach(i = distances, .packages = "SC3") %dopar% {
+    dists = foreach(i = distances, .packages = "SC3", .options.RNG=1234) %dorng% {
         try({
             calculate_distance(dataset, i)
         })
@@ -108,7 +108,7 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
 
     cat("Performing dimensionality reduction and kmeans clusterings...\n")
     labs = foreach(i = 1:dim(hash.table)[1], .packages = "SC3",
-                   .combine = rbind) %dopar% {
+                   .combine = rbind, .options.RNG=1234) %dorng% {
         try({
             t <- transformation(get(hash.table[i, 1], dists), hash.table[i, 2])[[1]]
             s <- paste(kmeans(t[, 1:hash.table[i, 4]],
@@ -147,7 +147,7 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
         }
     }
 
-    cons = foreach(i = 1:dim(all.combinations)[1], .packages = c("SC3", "cluster")) %dopar% {
+    cons = foreach(i = 1:dim(all.combinations)[1], .packages = c("SC3", "cluster"), .options.RNG=1234) %dorng% {
         try({
             d <- res[res$distan %in% strsplit(all.combinations[i, 1], " ")[[1]] &
                          res$dim.red %in% strsplit(all.combinations[i, 2], " ")[[1]] &

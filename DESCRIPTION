@@ -13,6 +13,7 @@ Depends:
     parallel,
     foreach,
     doParallel,
+    doRNG,
     grid,
     gtable,
     scales,
