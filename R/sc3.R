@@ -13,6 +13,9 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
         }
     }
 
+    # remove duplicated genes
+    dataset <- dataset[!duplicated(rownames(dataset)), ]
+
     # more than 2000 genes have to be expressed in each cell
     if(cell.filter) {
         cat("Preliminary cell filtering...\n")
