@@ -101,7 +101,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 d <- get_consensus()
                 silh <- d[[4]]
                 withProgress(message = 'Plotting...', value = 0, {
-                    plot(silh)
+                    plot(silh, col = "black")
                 })
             }, height = plot.height, width = plot.width)
 
