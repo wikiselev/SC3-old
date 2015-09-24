@@ -321,9 +321,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     if(dim(study.dataset)[2] > 0) {
                         clusts <- c(clusts, svm.prediction)
                     }
-                    out <- t(data.frame(cell.names, clusts))
-                    rownames(out) <- c("original.cell.labels", "calculated.cell.labels")
-                    write.table(out, file = file, col.names = F, quote = F, sep = ",")
+                    out <- data.frame(cell = cell.names,
+                                      cluster = clusts)
+                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
@@ -335,9 +335,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     validate(
                         need(try(!is.null(mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
                     )
-                    out <- data.frame(genes = rownames(mark.res), AUC = mark.res[,1],
-                                      cluster.index = mark.res[,2])
-                    write.table(out, file = file, row.names = F, quote = F, sep = ",")
+                    out <- data.frame(gene = rownames(mark.res), AUC = mark.res[,1],
+                                      cluster = mark.res[,2])
+                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
@@ -351,8 +351,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     )
                     nams <- names(de.res)
                     names(de.res) <- NULL
-                    out <- data.frame(genes = nams, p.value = de.res)
-                    write.table(out, file = file, row.names = F, quote = F, sep = ",")
+                    out <- data.frame(gene = nams, p.value = de.res)
+                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
