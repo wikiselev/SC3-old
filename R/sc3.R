@@ -77,22 +77,21 @@ sc3 <- function(filename, ks, cell.filter = F) {
     dataset <- gene_filter(dataset, filename)
 
     # define the output file basename
-    if(!is.character(filename)) {
-        filename <- deparse(substitute(filename))
-    } else {
-        filename <- basename(filename)
-    }
+    filename <- ifelse(!is.character(filename), deparse(substitute(filename)), basename(filename))
 
     # define cell names from the input dataset
     cell.names <- c(1:dim(dataset)[2])
     cell.names <- colnames(dataset)
 
+    # prepare for SVM (optional)
     study.dataset <- data.frame()
     if(dim(dataset)[2] > svm.num.cells) {
+
         cat("\n")
         cat(paste0("Your dataset contains more than ", svm.num.cells, " cells, therefore clustering wil be performed on a random sample of ", svm.num.cells, " cells, the rest of the cells will be predicted using SVM."))
         cat("\n")
         cat("\n")
+
         working.sample <- sample(1:dim(dataset)[2], svm.num.cells)
         study.sample <- setdiff(1:dim(dataset)[2], working.sample)
         study.dataset <- dataset[ , study.sample]
@@ -103,26 +102,29 @@ sc3 <- function(filename, ks, cell.filter = F) {
 
         cell.names <- working.sample
         cell.names <- colnames(dataset)
-
         cell.names <- c(cell.names, study.cell.names)
     }
 
+    # define number of cells and region of dimensions
     n.cells <- dim(dataset)[2]
     n.dim <- floor(0.04 * n.cells) : ceiling(0.07 * n.cells)
 
+    # for large datasets restrict the region of dimensions to 15
     if(length(n.dim) > 15) {
         n.dim <- sample(n.dim, 15)
     }
 
+    # create a hash table for running on parallel CPUs
     hash.table <- expand.grid(distan = distances,
                               dim.red = dimensionality.reductions,
                               k = c(min(ks) - 1, ks),
                               n.dim = n.dim, stringsAsFactors = F)
 
-    # register local cluster
+    # register computing cluster (n-1 CPUs) on a local machine
     cl <- makeCluster(detectCores() - 1, outfile="")
     registerDoParallel(cl, cores = detectCores() - 1)
 
+    # calculate distances in parallel
     cat("Calculating distance matrices...\n")
     dists = foreach(i = distances, .packages = "SC3", .options.RNG=1234) %dorng% {
         try({
@@ -131,8 +133,9 @@ sc3 <- function(filename, ks, cell.filter = F) {
     }
     names(dists) <- distances
 
+    # perform kmeans in parallel
+    # add a progress bar to be able to see the progress
     pb <- txtProgressBar(min = 1, max = dim(hash.table)[1], style = 3)
-
     cat("Performing dimensionality reduction and kmeans clusterings...\n")
     labs = foreach(i = 1:dim(hash.table)[1], .packages = "SC3",
                    .combine = rbind, .options.RNG=1234) %dorng% {
@@ -147,14 +150,14 @@ sc3 <- function(filename, ks, cell.filter = F) {
             return(s)
         })
     }
-
     close(pb)
-
     res <- cbind(hash.table, labs)
     res$labs <- as.character(res$labs)
     rownames(res) <- NULL
 
+    # perform consensus clustering in parallel
     cat("Computing consensus matrix and labels...\n")
+    # first make another hash table for consensus clustering
     all.combinations <- NULL
     for(k in c(min(ks) - 1, ks)) {
         for(i in 1:length(distances)) {
@@ -174,6 +177,7 @@ sc3 <- function(filename, ks, cell.filter = F) {
         }
     }
 
+    # run consensus clustering in parallel
     cons = foreach(i = 1:dim(all.combinations)[1], .packages = c("SC3", "cluster"), .options.RNG=1234) %dorng% {
         try({
             d <- res[res$distan %in% strsplit(all.combinations[i, 1], " ")[[1]] &
@@ -200,11 +204,10 @@ sc3 <- function(filename, ks, cell.filter = F) {
         })
     }
 
-
-
     # stop local cluster
     stopCluster(cl)
 
+    # start a shiny app in a browser window
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
                    dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names)
