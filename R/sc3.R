@@ -18,7 +18,7 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
 
     # more than 2000 genes have to be expressed in each cell
     if(cell.filter) {
-        cat("Preliminary cell filtering...\n")
+        cat("Cell filtering...\n")
         dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
         if(dim(dataset)[2] == 0) {
             cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
@@ -30,25 +30,28 @@ run_sc3 <- function(filename, ks, cell.filter = F) {
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
-    cat("Preliminary gene filtering...\n")
-    filter1.params <- filter1_params(dataset)
-    min.cells <- filter1.params$min.cells
-    max.cells <- filter1.params$max.cells
-    min.reads <- filter1.params$min.reads
-    dataset <- gene_filter1(dataset, min.cells, max.cells, min.reads)
+    cat("Gene filtering and log2-scaling...\n")
+    if(!is.character(filename)) {
+        if(deparse(substitute(filename)) != "bernstein") {
+            filter1.params <- filter1_params(dataset)
+            min.cells <- filter1.params$min.cells
+            max.cells <- filter1.params$max.cells
+            min.reads <- filter1.params$min.reads
+            dataset <- gene_filter1(dataset, min.cells, max.cells, min.reads)
+            dataset <- log2(1 + dataset)
+        }
+    } else {
+        filter1.params <- filter1_params(dataset)
+        min.cells <- filter1.params$min.cells
+        max.cells <- filter1.params$max.cells
+        min.reads <- filter1.params$min.reads
+        dataset <- gene_filter1(dataset, min.cells, max.cells, min.reads)
+        dataset <- log2(1 + dataset)
+    }
 
     if(dim(dataset)[1] == 0) {
         cat("Your dataset did not pass gene filter! Stopping now...")
         return()
-    }
-
-    cat("Log2-transforming data...\n")
-    if(!is.character(filename)) {
-        if(deparse(substitute(filename)) != "bernstein") {
-            dataset <- log2(1 + dataset)
-        }
-    } else {
-        dataset <- log2(1 + dataset)
     }
 
     if(!is.character(filename)) {
