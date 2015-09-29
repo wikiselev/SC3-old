@@ -197,6 +197,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 withProgress(message = 'Calculating Marker genes...', value = 0, {
                     hc <- get_consensus()[[3]]
                     clusts <- cutree(hc, input$clusters)
+                    cluster.order <- unique(clusts[order.dendrogram(as.dendrogram(hc))])
 
                     if(dim(study.dataset)[2] > 0) {
                         d <- cbind(dataset, study.dataset)
@@ -212,28 +213,24 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                         need(try(length(res) != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
                     )
 
-                    mark.res <<- res
-                    colnames(mark.res) <<- c("AUC", "clusts")
-
                     res1 <- NULL
-                    for(i in unique(res$Group)) {
+                    mark.res <<- NULL
+                    for(i in cluster.order) {
                         tmp <- res[res[,2] == i, ]
                         if(dim(tmp)[1] > 10) {
-                            tmp <- tmp[1:10, ]
+                            res1 <- rbind(res1, tmp[1:10, ])
                         }
-                        res1 <- rbind(res1, tmp)
+                        mark.res <<- rbind(mark.res, tmp)
                     }
 
+                    colnames(mark.res) <<- c("AUC", "clusts")
+
                     d <- d[rownames(res1), ]
-                    # colnames(d) <- names(clusts)
 
                     row.ann <- data.frame(Cluster = factor(res1$Group, levels = unique(res1$Group)))
                     rownames(row.ann) <- rownames(res1)
 
-                    # col.ann <- data.frame(Cluster1 = factor(clusts, levels = unique(clusts[hc$order])))
-                    # rownames(col.ann) <- clusts
-
-                    # col.labs <- clusts
+                    # col.ann <- data.frame(Cluster_Row = factor(colnames(d), levels = cluster.order))
 
                     row.gaps <- res1$Group
                     row.gaps <- which(diff(row.gaps) != 0)
