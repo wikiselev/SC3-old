@@ -1,4 +1,4 @@
-run_sc3 <- function(filename, ks, cell.filter = F) {
+sc3 <- function(filename, ks, cell.filter = F) {
 
     # set seed to be able to reproduce the results
     set.seed(1)
