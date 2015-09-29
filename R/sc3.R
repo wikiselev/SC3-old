@@ -1,65 +1,89 @@
+
+get_data <- function(name) {
+    if(!is.character(name)) {
+        return(name)
+    } else {
+        if(!grepl("csv", name)) {
+            return(read.table(name, check.names = F))
+        } else if(grepl("csv", name)) {
+            return(read.csv(name, check.names = F))
+        }
+    }
+}
+
+cell_filter <- function(data) {
+    # more than 2000 genes have to be expressed in each cell
+    # this criterium is taken from bernstein paper:
+    # Patel, A. P. et al. Single-cell RNA-seq highlights intratumoral heterogeneity
+    # in primary glioblastoma. Science 344, 1396–1401 (2014).
+    cat("Cell filtering...\n")
+    data <- data[ , colSums(data > 1e-2) > 2000]
+    if(dim(data)[2] == 0) {
+        cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
+        return()
+    } else {
+        return(data)
+    }
+}
+
+gene_filter <- function(data, name) {
+    cat("Gene filtering and log2-scaling...\n")
+    if(!is.character(name)) {
+        if(deparse(substitute(name)) != "bernstein") {
+            filter1.params <- filter1_params(data)
+            min.cells <- filter1.params$min.cells
+            max.cells <- filter1.params$max.cells
+            min.reads <- filter1.params$min.reads
+            data <- gene_filter1(data, min.cells, max.cells, min.reads)
+            data <- log2(1 + data)
+        }
+    } else {
+        filter1.params <- filter1_params(data)
+        min.cells <- filter1.params$min.cells
+        max.cells <- filter1.params$max.cells
+        min.reads <- filter1.params$min.reads
+        data <- gene_filter1(data, min.cells, max.cells, min.reads)
+        data <- log2(1 + data)
+    }
+
+    if(dim(data)[1] == 0) {
+        cat("All genes were removed after the gene filter! Stopping now...")
+        return()
+    } else {
+        return(data)
+    }
+}
+
 sc3 <- function(filename, ks, cell.filter = F) {
 
-    # set seed to be able to reproduce the results
+    # initial parameters
     set.seed(1)
-
-    if(!is.character(filename)) {
-        dataset <- filename
-    } else {
-        if(!grepl("csv", filename)) {
-            dataset <- read.table(filename, check.names = F)
-        } else if(grepl("csv", filename)) {
-            dataset <- read.csv(filename, check.names = F)
-        }
-    }
-
-    # remove duplicated genes
-    dataset <- dataset[!duplicated(rownames(dataset)), ]
-
-    # more than 2000 genes have to be expressed in each cell
-    if(cell.filter) {
-        cat("Cell filtering...\n")
-        dataset <- dataset[ , colSums(dataset > 1e-2) > 2000]
-        if(dim(dataset)[2] == 0) {
-            cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
-            return()
-        }
-    }
-
     svm.num.cells <- 1000
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
-    cat("Gene filtering and log2-scaling...\n")
-    if(!is.character(filename)) {
-        if(deparse(substitute(filename)) != "bernstein") {
-            filter1.params <- filter1_params(dataset)
-            min.cells <- filter1.params$min.cells
-            max.cells <- filter1.params$max.cells
-            min.reads <- filter1.params$min.reads
-            dataset <- gene_filter1(dataset, min.cells, max.cells, min.reads)
-            dataset <- log2(1 + dataset)
-        }
-    } else {
-        filter1.params <- filter1_params(dataset)
-        min.cells <- filter1.params$min.cells
-        max.cells <- filter1.params$max.cells
-        min.reads <- filter1.params$min.reads
-        dataset <- gene_filter1(dataset, min.cells, max.cells, min.reads)
-        dataset <- log2(1 + dataset)
+    # get input data
+    dataset <- get_data(filename)
+
+    # remove duplicated genes
+    dataset <- dataset[!duplicated(rownames(dataset)), ]
+
+    # cell filter
+    if(cell.filter) {
+        dataset <- cell_filter(dataset)
     }
 
-    if(dim(dataset)[1] == 0) {
-        cat("Your dataset did not pass gene filter! Stopping now...")
-        return()
-    }
+    # gene filter
+    dataset <- gene_filter(dataset, filename)
 
+    # define the output file basename
     if(!is.character(filename)) {
         filename <- deparse(substitute(filename))
     } else {
         filename <- basename(filename)
     }
 
+    # define cell names from the input dataset
     cell.names <- c(1:dim(dataset)[2])
     cell.names <- colnames(dataset)
 
