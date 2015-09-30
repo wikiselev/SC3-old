@@ -26,25 +26,14 @@ cell_filter <- function(data) {
     }
 }
 
-gene_filter <- function(data, name) {
+gene_filter <- function(data) {
     cat("Gene filtering and log2-scaling...\n")
-    if(!is.character(name)) {
-        if(deparse(substitute(name)) != "bernstein") {
-            filter1.params <- filter1_params(data)
-            min.cells <- filter1.params$min.cells
-            max.cells <- filter1.params$max.cells
-            min.reads <- filter1.params$min.reads
-            data <- gene_filter1(data, min.cells, max.cells, min.reads)
-            data <- log2(1 + data)
-        }
-    } else {
-        filter1.params <- filter1_params(data)
-        min.cells <- filter1.params$min.cells
-        max.cells <- filter1.params$max.cells
-        min.reads <- filter1.params$min.reads
-        data <- gene_filter1(data, min.cells, max.cells, min.reads)
-        data <- log2(1 + data)
-    }
+    filter1.params <- filter1_params(data)
+    min.cells <- filter1.params$min.cells
+    max.cells <- filter1.params$max.cells
+    min.reads <- filter1.params$min.reads
+    data <- gene_filter1(data, min.cells, max.cells, min.reads)
+    data <- log2(1 + data)
 
     if(dim(data)[1] == 0) {
         cat("All genes were removed after the gene filter! Stopping now...")
@@ -74,7 +63,9 @@ sc3 <- function(filename, ks, cell.filter = F) {
     }
 
     # gene filter
-    dataset <- gene_filter(dataset, filename)
+    if(deparse(substitute(filename)) != "bernstein") {
+        dataset <- gene_filter(dataset)
+    }
 
     # define the output file basename
     filename <- ifelse(!is.character(filename), deparse(substitute(filename)), basename(filename))

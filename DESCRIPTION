@@ -20,5 +20,7 @@ Depends:
     RColorBrewer,
     colorspace,
     ROCR,
-    cluster
+    cluster,
+    robustbase,
+    rrcov
 LazyData: TRUE

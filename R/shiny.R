@@ -12,6 +12,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     colour.pallete <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(median(as.numeric(unlist(cons.table[,3]))))
     plot.width <- 800
     plot.height <- 800
+    plot.height.small <- 300
 
     de.res <- NULL
     mark.res <- NULL
@@ -45,11 +46,13 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 if(dim(study.dataset)[2] > 0) {
                     actionButton("svm", label = "Run SVM")},
 
-                h4("2. Gene identificatiion"),
+                h4("2. Analysis"),
                 p("\n\n"),
                 actionButton("get_de_genes", label = "Get DE genes"),
                 p("\n\n"),
                 actionButton("get_mark_genes", label = "Get Marker genes"),
+                p("\n\n"),
+                actionButton("get_outliers", label = "Get Cells outliers"),
 
                 h4("3. Save results"),
                 p("\n\n"),
@@ -57,7 +60,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 p("\n\n"),
                 downloadLink('de', label = "Save DE genes"),
                 p("\n\n"),
-                downloadLink('markers', label = "Save cluster markers")
+                downloadLink('markers', label = "Save cluster markers"),
+                p("\n\n"),
+                downloadLink('outl', label = "Save cell outliers")
             ),
             mainPanel(
                 uiOutput('mytabs')
@@ -72,14 +77,16 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                    tabPanel("Expression Matrix (1)", plotOutput('matrix')),
                                    tabPanel("SVM (1+)", textOutput('svm_panel')),
                                    tabPanel("DE genes (2)", plotOutput('de_genes')),
-                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')))
+                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')),
+                                   tabPanel("Cells outliers (2)", plotOutput('outliers')))
                 } else {
                     myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
                                    tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
                                    tabPanel("Expression Matrix (1)", plotOutput('matrix')),
                                    tabPanel("DE genes (2)", plotOutput('de_genes')),
-                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')))
+                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')),
+                                   tabPanel("Cells outliers (2)", plotOutput('outliers')))
                 }
                 do.call(tabsetPanel, myTabs)
             })
@@ -256,6 +263,86 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 })
             })
 
+            get_outl <- eventReactive(input$get_outliers, {
+                withProgress(message = 'Calculating cell outliers...', value = 0, {
+                    hc <- get_consensus()[[3]]
+                    clusts <- cutree(hc, input$clusters)
+                    cluster.order <- unique(clusts[order.dendrogram(as.dendrogram(hc))])
+
+                    if(dim(study.dataset)[2] > 0) {
+                        d <- cbind(dataset, study.dataset)
+                        colnames(d) <- c(clusts, colnames(study.dataset))
+                    } else {
+                        d <- dataset
+                        colnames(d) <- clusts
+                    }
+
+                    outl.res <<- list()
+
+                    for(i in cluster.order) {
+                        print(i)
+                        # reduce p dimensions by using
+                        t <- tryCatch({
+                            PcaHubert(d[ , colnames(d) == i])
+                        }, warning = function(cond) {
+                            message(cond)
+                        }, error = function(cond) {
+                            message(paste0("No outliers detected in cluster ", i, ". Distribution of gene expression in cells is too skewed towards 0."))
+                            return(NULL)
+                        })
+                        if(class(t) != "NULL") {
+                            # degrees of freedom used in mcd and chisquare distribution
+                            if(dim(t@loadings)[1] <= 6) {
+                                message(paste0("No outliers detected in cluster ", i, ". Small number of cells in the cluster."))
+                                out <- rep(0, dim(d[ , colnames(d) == i])[2])
+                                names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
+                                outl.res[[i]] <<- out
+                            } else {
+                                df <- ifelse(dim(t@loadings)[2] > 3, 3, dim(t@loadings)[2])
+
+                                mcd <- NULL
+                                if(df != 1) {
+                                    mcd <- tryCatch({
+                                        covMcd(t@loadings[ , 1:df])
+                                    }, warning = function(cond) {
+                                        message(cond)
+                                    }, error = function(cond) {
+                                        message("No outliers detected in the cluster. Error in MCD.")
+                                        return(NULL)
+                                    })
+                                }
+
+                                if(class(mcd) != "NULL") {
+                                    # sqrt(mcd$mah) - sqrt of robust distance
+                                    # sqrt(qchisq(.95, df = length(mcd$best))) - sqrt of 97.5% quantile of a
+                                    # chi-squared distribution with p degrees of freedom
+                                    print(t@loadings[ , 1:df])
+                                    print(mcd)
+                                    outliers <- sqrt(mcd$mah) - sqrt(qchisq(.9999, df = df))
+                                    outliers[which(outliers < 0)] <- 0
+                                    outl.res[[i]] <<- outliers
+                                } else {
+                                    out <- rep(0, dim(d[ , colnames(d) == i])[2])
+                                    names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
+                                    outl.res[[i]] <<- out
+                                }
+                            }
+                        } else {
+                            out <- rep(0, dim(d[ , colnames(d) == i])[2])
+                            names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
+                            outl.res[[i]] <<- out
+                        }
+                    }
+
+                    plot(unlist(outl.res[cluster.order]),
+                         col = names(unlist(outl.res[cluster.order])),
+                         type = "p", ylab = "Outliers", xlab = "Cells",
+                         pch = 16, cex = 0.9)
+
+                })
+
+            })
+
             get_svm <- eventReactive(input$svm, {
                 withProgress(message = 'Running SVM...', value = 0, {
                     hc <- get_consensus()[[3]]
@@ -280,6 +367,10 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             output$mark_genes <- renderPlot({
                 get_mark_genes()
             }, height = plot.height, width = plot.width)
+
+            output$outliers <- renderPlot({
+                get_outl()
+            }, height = plot.height.small, width = plot.width)
 
             output$labels <- renderUI({
                 d <- get_consensus()[[2]]
@@ -324,6 +415,21 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 }
             )
 
+            output$de <- downloadHandler(
+                filename = function() {
+                    paste0("k-", input$clusters, "-de-genes-", filename, ".csv")
+                },
+                content = function(file) {
+                    validate(
+                        need(try(!is.null(de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
+                    )
+                    nams <- names(de.res)
+                    names(de.res) <- NULL
+                    out <- data.frame(gene = nams, p.value = de.res)
+                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
+                }
+            )
+
             output$markers <- downloadHandler(
                 filename = function() {
                     paste0("k-", input$clusters, "-markers-", filename, ".csv")
@@ -338,17 +444,16 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 }
             )
 
-            output$de <- downloadHandler(
+            output$outl <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-de-genes-", filename, ".csv")
+                    paste0("k-", input$clusters, "-outliers-", filename, ".csv")
                 },
                 content = function(file) {
                     validate(
-                        need(try(!is.null(de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
+                        need(try(!is.null(outl.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
                     )
-                    nams <- names(de.res)
-                    names(de.res) <- NULL
-                    out <- data.frame(gene = nams, p.value = de.res)
+                    out <- data.frame(gene = rownames(mark.res), AUC = mark.res[,1],
+                                      cluster = mark.res[,2])
                     write.table(out, file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
