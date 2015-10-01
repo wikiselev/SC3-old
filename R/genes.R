@@ -21,7 +21,7 @@ get_marker_genes <- function(dataset, labels) {
     geneAUCs <- apply(dataset, 1, getAUC, labels = labels)
     geneAUCsdf <- data.frame(matrix(unlist(geneAUCs), nrow=length(geneAUCs)/2, byrow=T))
     rownames(geneAUCsdf) <- rownames(dataset)
-    colnames(geneAUCsdf) <- c("AUC","Group")
+    colnames(geneAUCsdf) <- c("AUC","clusts")
     geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.8,]
     geneAUCsdf <- geneAUCsdf[order(geneAUCsdf[,1], decreasing = T),]
     return(geneAUCsdf)

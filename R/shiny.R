@@ -14,8 +14,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     plot.height <- 800
     plot.height.small <- 300
 
-    de.res <- NULL
-    mark.res <- NULL
+    de.res <<- NULL
+    mark.res <<- NULL
+
+    if(dim(study.dataset)[2] > 0) {
+        with_svm <<- TRUE
+    } else {
+        with_svm <<- FALSE
+    }
 
     shinyApp(
         ui = fluidPage(
@@ -39,11 +45,11 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                    choices = dimensionality.reductions,
                                    selected = dimensionality.reductions),
 
-                if(dim(study.dataset)[2] > 0) {
+                if(with_svm) {
                     h4("1+. SVM")},
-                if(dim(study.dataset)[2] > 0) {
+                if(with_svm) {
                     p("Press this button when you have found the best clustering\n\n")},
-                if(dim(study.dataset)[2] > 0) {
+                if(with_svm) {
                     actionButton("svm", label = "Run SVM")},
 
                 h4("2. Analysis"),
@@ -70,7 +76,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
         ),
         server = function(input, output, session) {
             output$mytabs = renderUI({
-                if(dim(study.dataset)[2] > 0) {
+                if(with_svm) {
                     myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
                                    tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
@@ -149,7 +155,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 withProgress(message = 'Calculating DE genes...', value = 0, {
                     hc <- get_consensus()[[3]]
                     clusts <- cutree(hc, input$clusters)
-                    if(dim(study.dataset)[2] > 0) {
+                    if(with_svm) {
                         d <- cbind(dataset, study.dataset)
                         colnames(d) <- c(clusts, colnames(study.dataset))
                     } else {
@@ -176,7 +182,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     p.value.ann <- data.frame(p.value = factor(p.value.ranges, levels = unique(p.value.ranges)))
                     rownames(p.value.ann) <- names(res)
 
-                    if(dim(study.dataset)[2] > 0) {
+                    if(with_svm) {
                         col.gaps <- as.numeric(colnames(d))
                         col.gaps <- col.gaps[order(col.gaps)]
                         col.gaps <- which(diff(col.gaps) != 0)
@@ -202,64 +208,35 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating Marker genes...', value = 0, {
+                    # get clusters and cluster order
                     hc <- get_consensus()[[3]]
                     clusts <- cutree(hc, input$clusters)
-                    cluster.order <- unique(clusts[order.dendrogram(as.dendrogram(hc))])
+                    cell.order <- order.dendrogram(as.dendrogram(hc))
+                    cluster.order.all <- clusts[cell.order]
+                    cluster.order <- unique(clusts[cell.order])
 
-                    if(dim(study.dataset)[2] > 0) {
-                        d <- cbind(dataset, study.dataset)
-                        colnames(d) <- c(clusts, colnames(study.dataset))
-                    } else {
-                        d <- dataset
-                        colnames(d) <- clusts
-                    }
+                    # prepare dataset for plotting
+                    d <- prepare_dataset(dataset, clusts, cell.order, study.dataset)
 
-                    res <- get_marker_genes(d, as.numeric(colnames(d)))
+                    # define marker genes
+                    mark.res.plot <- mark_genes_main(d, cluster.order)
 
+                    # check the results of mark_genes_main:
+                    # global variable mark.res
                     validate(
-                        need(try(length(res) != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
+                        need(try(dim(mark.res)[1] != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
                     )
 
-                    res1 <- NULL
-                    mark.res <<- NULL
-                    for(i in cluster.order) {
-                        tmp <- res[res[,2] == i, ]
-                        if(dim(tmp)[1] > 10) {
-                            res1 <- rbind(res1, tmp[1:10, ])
-                        }
-                        mark.res <<- rbind(mark.res, tmp)
-                    }
+                    d.param <- mark_gene_heatmap_param(d, mark.res.plot)
 
-                    colnames(mark.res) <<- c("AUC", "clusts")
-
-                    d <- d[rownames(res1), ]
-
-                    row.ann <- data.frame(Cluster = factor(res1$Group, levels = unique(res1$Group)))
-                    rownames(row.ann) <- rownames(res1)
-
-                    # col.ann <- data.frame(Cluster_Row = factor(colnames(d), levels = cluster.order))
-
-                    row.gaps <- res1$Group
-                    row.gaps <- which(diff(row.gaps) != 0)
-
-                    if(dim(study.dataset)[2] > 0) {
-                        col.gaps <- as.numeric(colnames(d))
-                        col.gaps <- col.gaps[order(col.gaps)]
-                        col.gaps <- which(diff(col.gaps) != 0)
-                        pheatmap(d[, order(colnames(d))], color = colour.pallete,
-                                 show_colnames = F,
-                                 cluster_rows = F, cluster_cols = F, annotation_row = row.ann,
-                                 annotation_names_row = F,
-                                 treeheight_col = 0, gaps_row = row.gaps, gaps_col = col.gaps)
-                    } else {
-                        pheatmap(d,
-                                 color = colour.pallete, show_colnames = F,
-                                 cluster_cols = hc,
-                                 cutree_cols = input$clusters, cluster_rows = F,
-                                 annotation_row = row.ann,
-                                 annotation_names_row = F,
-                                 treeheight_col = 0, gaps_row = row.gaps)
-                    }
+                    pheatmap(d[rownames(mark.res.plot), ], color = colour.pallete,
+                             show_colnames = F,
+                             cluster_rows = F,
+                             cluster_cols = F,
+                             annotation_row = d.param$row.ann,
+                             annotation_names_row = F,
+                             gaps_row = d.param$row.gaps,
+                             gaps_col = d.param$col.gaps)
                 })
             })
 
@@ -269,7 +246,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     clusts <- cutree(hc, input$clusters)
                     cluster.order <- unique(clusts[order.dendrogram(as.dendrogram(hc))])
 
-                    if(dim(study.dataset)[2] > 0) {
+                    if(with_svm) {
                         d <- cbind(dataset, study.dataset)
                         colnames(d) <- c(clusts, colnames(study.dataset))
                     } else {
@@ -406,7 +383,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 content = function(file) {
                     hc <- get_consensus()[[3]]
                     clusts <- cutree(hc, k = input$clusters)
-                    if(dim(study.dataset)[2] > 0) {
+                    if(with_svm) {
                         clusts <- c(clusts, svm.prediction)
                     }
                     out <- data.frame(cell = cell.names,
