@@ -4,9 +4,9 @@ get_data <- function(name) {
         return(name)
     } else {
         if(!grepl("csv", name)) {
-            return(read.table(name, check.names = F))
+            return(as.matrix(read.table(name, check.names = F)))
         } else if(grepl("csv", name)) {
-            return(read.csv(name, check.names = F))
+            return(as.matrix(read.csv(name, check.names = F)))
         }
     }
 }
