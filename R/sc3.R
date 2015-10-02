@@ -75,6 +75,7 @@ sc3 <- function(filename, ks, cell.filter = F) {
     cell.names <- colnames(dataset)
 
     # prepare for SVM (optional)
+    study.cell.names <- NULL
     study.dataset <- data.frame()
     if(dim(dataset)[2] > svm.num.cells) {
 
@@ -93,7 +94,6 @@ sc3 <- function(filename, ks, cell.filter = F) {
 
         cell.names <- working.sample
         cell.names <- colnames(dataset)
-        cell.names <- c(cell.names, study.cell.names)
     }
 
     # define number of cells and region of dimensions
@@ -201,5 +201,5 @@ sc3 <- function(filename, ks, cell.filter = F) {
     # start a shiny app in a browser window
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names)
+                   dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names, study.cell.names)
 }

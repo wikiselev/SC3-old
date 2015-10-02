@@ -31,6 +31,7 @@ kruskal_statistics <- function(dataset, labels) {
     t <- apply(dataset, 1, kruskal.test, g = factor(labels))
     ps <- unlist(lapply(t, "[[", "p.value"))
     ps <- p.adjust(ps, "bonferroni")
+    ps <- ps[!is.na(ps)]
     ps <- ps[ps < 0.05]
     return(ps[order(ps)])
 }

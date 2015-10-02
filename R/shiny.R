@@ -1,4 +1,4 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names) {
+run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names, study.cell.names) {
 
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
@@ -14,8 +14,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     plot.height <- 800
     plot.height.small <- 300
 
+    cell.names <<- cell.names
+    study.cell.names <<- study.cell.names
+    original.labels <<- NULL
+    new.labels <<- NULL
+
     de.res <<- NULL
     mark.res <<- NULL
+    outl.res <<- list()
 
     if(dim(study.dataset)[2] > 0) {
         with_svm <<- TRUE
@@ -77,7 +83,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
         server = function(input, output, session) {
             output$mytabs = renderUI({
                 if(with_svm) {
-                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
+                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
                                    tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
                                    tabPanel("Expression Matrix (1)", plotOutput('matrix')),
@@ -86,7 +92,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                    tabPanel("Marker genes (2)", plotOutput('mark_genes')),
                                    tabPanel("Cells outliers (2)", plotOutput('outliers')))
                 } else {
-                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('plot')),
+                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
                                    tabPanel("Silhouette (1)", plotOutput('silh')),
                                    tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
                                    tabPanel("Expression Matrix (1)", plotOutput('matrix')),
@@ -96,109 +102,131 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 }
                 do.call(tabsetPanel, myTabs)
             })
-            get_consensus <- reactive({
+
+            ## REACTIVE PANELS
+
+            update_clustering <- reactive({
                 res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
-                                      as.numeric(cons.table[ , 3]) == input$clusters, 4]
-                return(res[[1]])
+                                      as.numeric(cons.table[ , 3]) == input$clusters, 4][[1]]
+                res1 <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
+                                      unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
+                                      as.numeric(cons.table[ , 3]) == (input$clusters - 1), 4][[1]]
+                input.consensus <<- res[[1]]
+                input.labels <<- res[[2]]
+                input.labels1 <<- res1[[2]]
+                input.hc <<- res[[3]]
+                input.clusts <<- cutree(input.hc, input$clusters)
+                input.cell.order <<- order.dendrogram(as.dendrogram(input.hc))
+                input.silh <<- res[[4]]
+                cell.names <<- cell.names[input.cell.order]
+                study.cell.names <<- study.cell.names
+                colnames(dataset) <<- input.clusts
+                dataset <<- dataset[ , input.cell.order]
+
+                original.labels <<- cell.names
+                new.labels <<- reindex_clusters(colnames(dataset))
+
+                col.gaps <<- as.numeric(colnames(dataset))
+                col.gaps <<- which(diff(col.gaps) != 0)
             })
 
-            get_consensus_1 <- reactive({
-                res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
-                                      unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
-                                      as.numeric(cons.table[ , 3]) == (input$clusters - 1), 4]
-                return(res[[1]])
-            })
+            output$consensus <- renderPlot({
+                update_clustering()
+                withProgress(message = 'Plotting...', value = 0, {
+                    pheatmap(input.consensus,
+                             color = colour.pallete,
+                             cluster_rows = input.hc,
+                             cutree_rows = input$clusters,
+                             cutree_cols = input$clusters)
+                })
+            }, height = plot.height, width = plot.width)
 
             output$silh <- renderPlot({
-                d <- get_consensus()
-                silh <- d[[4]]
+                update_clustering()
                 withProgress(message = 'Plotting...', value = 0, {
-                    plot(silh, col = "black")
+                    plot(input.silh, col = "black")
                 })
             }, height = plot.height, width = plot.width)
 
-            output$plot <- renderPlot({
-                d <- get_consensus()
-                hc <- d[[3]]
-                d <- d[[1]]
-                show_labs <- TRUE
-                if(dim(d)[1] > 80) {
-                    show_labs <- FALSE
+            output$labels <- renderUI({
+                update_clustering()
+
+                labs1 <- list()
+                cols <- iwanthue(input$clusters - 1)
+                for(i in 1:(input$clusters - 1)) {
+                    col <- cols[i]
+                    ind <- unlist(strsplit(as.character(input.labels1[i, ]), " "))
+                    for(j in ind) {
+                        labs1[[j]] <- paste0("<font color=\"", col, "\">", j, "</font>")
+                    }
                 }
-                withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(d,
-                             color = colour.pallete,
-                             cluster_rows = hc,
-                             cutree_rows = input$clusters, cutree_cols = input$clusters,
-                             show_rownames = show_labs, show_colnames = show_labs)
-                })
-            }, height = plot.height, width = plot.width)
+
+                labs <- paste0("<br/><font size=\"3\">Colours correspond to clusters obtained by clustering the data by <b>",
+                               input$clusters - 1, "</b> clusters</font><br/>")
+                labs <- c(labs, "<br/>")
+                for(i in 1:input$clusters) {
+                    ind <- unlist(strsplit(as.character(input.labels[i, ]), " "))
+                    for(j in ind) {
+                        labs <- c(labs, labs1[[j]])
+                    }
+                    labs <- c(labs, c("<br/>", "<hr>"))
+                }
+
+                HTML(paste0(labs))
+            })
 
             output$matrix <- renderPlot({
-                hc <- get_consensus()[[3]]
+                update_clustering()
                 withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(dataset, cluster_cols = hc,
-                             cutree_cols = input$clusters,
+                    pheatmap(dataset,
                              color = colour.pallete,
-                             kmeans_k = 100, show_rownames = F, show_colnames = F,
-                             treeheight_col = 0,
+                             kmeans_k = 100,
+                             cluster_cols = F,
+                             show_rownames = F,
+                             show_colnames = F,
+                             gaps_col = col.gaps,
                              main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
                                      Only the values of the cluster centers are shown.")
                 })
             }, height = plot.height, width = plot.width)
+
+            ## REACTIVE BUTTONS
+
+            get_svm <- eventReactive(input$svm, {
+                withProgress(message = 'Running SVM...', value = 0, {
+                    update_clustering()
+                    prediction <- support_vector_machines1(dataset, study.dataset, "linear")
+                    colnames(study.dataset) <<- prediction
+                    return(prediction)
+                })
+            })
 
             get_de_genes <- eventReactive(input$get_de_genes, {
                 validate(
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating DE genes...', value = 0, {
-                    hc <- get_consensus()[[3]]
-                    clusts <- cutree(hc, input$clusters)
-                    if(with_svm) {
-                        d <- cbind(dataset, study.dataset)
-                        colnames(d) <- c(clusts, colnames(study.dataset))
-                    } else {
-                        d <- dataset
-                        colnames(d) <- clusts
-                    }
-
-                    res <- kruskal_statistics(d, colnames(d))
-
+                    update_clustering()
+                    # prepare dataset for plotting
+                    d <- prepare_dataset(dataset, study.dataset)
+                    # define de genes
+                    de.res <<- kruskal_statistics(d, colnames(d))
+                    # check the results of de_genes_main:
+                    # global variable de.res
                     validate(
-                        need(try(length(res) != 0), "\nUnable to find significantly (p-value < 0.05) differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
+                        need(try(length(de.res) != 0), "\nUnable to find significantly (p-value < 0.05) differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
                     )
 
-                    de.res <<- res
+                    d.param <- de_gene_heatmap_param(head(de.res, 70))
 
-                    res <- head(res, 68)
-                    d <- d[names(res), ]
-
-                    p.value.ann <- split(res, ceiling(seq_along(res)/17))
-                    p.value.ranges <- as.vector(unlist(lapply(p.value.ann, function(x){rep(max(x), length(x))})))
-                    p.value.ranges <- format(p.value.ranges, scientific = T, digits = 2)
-                    p.value.ranges <- paste("<", p.value.ranges, sep=" ")
-
-                    p.value.ann <- data.frame(p.value = factor(p.value.ranges, levels = unique(p.value.ranges)))
-                    rownames(p.value.ann) <- names(res)
-
-                    if(with_svm) {
-                        col.gaps <- as.numeric(colnames(d))
-                        col.gaps <- col.gaps[order(col.gaps)]
-                        col.gaps <- which(diff(col.gaps) != 0)
-                        pheatmap(d[, order(colnames(d))], color = colour.pallete,
-                                 show_colnames = F,
-                                 cluster_rows = F, cluster_cols = F, annotation_row = p.value.ann,
-                                 annotation_names_row = F,
-                                 treeheight_col = 0, gaps_col = col.gaps)
-                    } else {
-                        pheatmap(d,
-                                 color = colour.pallete, show_colnames = F,
-                                 cluster_cols = hc,
-                                 cutree_cols = input$clusters, cluster_rows = F,
-                                 annotation_row = p.value.ann, annotation_names_row = F,
-                                 treeheight_col = 0)
-                    }
+                    pheatmap(d[names(head(de.res, 70)), ], color = colour.pallete,
+                             show_colnames = F,
+                             cluster_rows = F,
+                             cluster_cols = F,
+                             annotation_row = d.param$row.ann,
+                             annotation_names_row = F,
+                             gaps_col = col.gaps)
                 })
 
             })
@@ -208,27 +236,17 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating Marker genes...', value = 0, {
-                    # get clusters and cluster order
-                    hc <- get_consensus()[[3]]
-                    clusts <- cutree(hc, input$clusters)
-                    cell.order <- order.dendrogram(as.dendrogram(hc))
-                    cluster.order.all <- clusts[cell.order]
-                    cluster.order <- unique(clusts[cell.order])
-
+                    update_clustering()
                     # prepare dataset for plotting
-                    d <- prepare_dataset(dataset, clusts, cell.order, study.dataset)
-
+                    d <- prepare_dataset(dataset, study.dataset)
                     # define marker genes
-                    mark.res.plot <- mark_genes_main(d, cluster.order)
-
+                    mark.res.plot <- mark_genes_main(d)
                     # check the results of mark_genes_main:
                     # global variable mark.res
                     validate(
                         need(try(dim(mark.res)[1] != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
                     )
-
-                    d.param <- mark_gene_heatmap_param(d, mark.res.plot)
-
+                    d.param <- mark_gene_heatmap_param(mark.res.plot)
                     pheatmap(d[rownames(mark.res.plot), ], color = colour.pallete,
                              show_colnames = F,
                              cluster_rows = F,
@@ -236,105 +254,33 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                              annotation_row = d.param$row.ann,
                              annotation_names_row = F,
                              gaps_row = d.param$row.gaps,
-                             gaps_col = d.param$col.gaps)
+                             gaps_col = col.gaps)
                 })
             })
 
             get_outl <- eventReactive(input$get_outliers, {
                 withProgress(message = 'Calculating cell outliers...', value = 0, {
-                    hc <- get_consensus()[[3]]
-                    clusts <- cutree(hc, input$clusters)
-                    cluster.order <- unique(clusts[order.dendrogram(as.dendrogram(hc))])
+                    update_clustering()
+                    # prepare dataset for plotting
+                    d <- prepare_dataset(dataset, study.dataset)
 
-                    if(with_svm) {
-                        d <- cbind(dataset, study.dataset)
-                        colnames(d) <- c(clusts, colnames(study.dataset))
-                    } else {
-                        d <- dataset
-                        colnames(d) <- clusts
-                    }
+                    # compute outlier cells
+                    outl_cells_main(d)
 
-                    outl.res <<- list()
-
-                    for(i in cluster.order) {
-                        print(i)
-                        # reduce p dimensions by using
-                        t <- tryCatch({
-                            PcaHubert(d[ , colnames(d) == i])
-                        }, warning = function(cond) {
-                            message(cond)
-                        }, error = function(cond) {
-                            message(paste0("No outliers detected in cluster ", i, ". Distribution of gene expression in cells is too skewed towards 0."))
-                            return(NULL)
-                        })
-                        if(class(t) != "NULL") {
-                            # degrees of freedom used in mcd and chisquare distribution
-                            if(dim(t@loadings)[1] <= 6) {
-                                message(paste0("No outliers detected in cluster ", i, ". Small number of cells in the cluster."))
-                                out <- rep(0, dim(d[ , colnames(d) == i])[2])
-                                names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-                                outl.res[[i]] <<- out
-                            } else {
-                                df <- ifelse(dim(t@loadings)[2] > 3, 3, dim(t@loadings)[2])
-
-                                mcd <- NULL
-                                if(df != 1) {
-                                    mcd <- tryCatch({
-                                        covMcd(t@loadings[ , 1:df])
-                                    }, warning = function(cond) {
-                                        message(cond)
-                                    }, error = function(cond) {
-                                        message("No outliers detected in the cluster. Error in MCD.")
-                                        return(NULL)
-                                    })
-                                }
-
-                                if(class(mcd) != "NULL") {
-                                    # sqrt(mcd$mah) - sqrt of robust distance
-                                    # sqrt(qchisq(.95, df = length(mcd$best))) - sqrt of 97.5% quantile of a
-                                    # chi-squared distribution with p degrees of freedom
-                                    print(t@loadings[ , 1:df])
-                                    print(mcd)
-                                    outliers <- sqrt(mcd$mah) - sqrt(qchisq(.9999, df = df))
-                                    outliers[which(outliers < 0)] <- 0
-                                    outl.res[[i]] <<- outliers
-                                } else {
-                                    out <- rep(0, dim(d[ , colnames(d) == i])[2])
-                                    names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-                                    outl.res[[i]] <<- out
-                                }
-                            }
-                        } else {
-                            out <- rep(0, dim(d[ , colnames(d) == i])[2])
-                            names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-                            outl.res[[i]] <<- out
-                        }
-                    }
-
-                    plot(unlist(outl.res[cluster.order]),
-                         col = names(unlist(outl.res[cluster.order])),
+                    plot(unlist(outl.res),
+                         col = names(unlist(outl.res)),
                          type = "p", ylab = "Outliers", xlab = "Cells",
-                         pch = 16, cex = 0.9)
+                         pch = 16, cex = 1.1)
 
                 })
 
             })
 
-            get_svm <- eventReactive(input$svm, {
-                withProgress(message = 'Running SVM...', value = 0, {
-                    hc <- get_consensus()[[3]]
-                    clusts <- cutree(hc, input$clusters)
-                    colnames(dataset) <- clusts
-                    prediction <- support_vector_machines1(dataset, study.dataset, "linear")
-                    colnames(study.dataset) <<- prediction
-                    return(prediction)
-                })
-            })
+            ## PANELS REACTIVE ON BUTTON CLICK
 
             output$svm_panel <- renderText({
                 svm.prediction <<- get_svm()
                 "SVM finished!"
-                # c("SVM finished!", "\n\n", svm.prediction)
             })
 
             output$de_genes <- renderPlot({
@@ -349,45 +295,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 get_outl()
             }, height = plot.height.small, width = plot.width)
 
-            output$labels <- renderUI({
-                d <- get_consensus()[[2]]
-                d1 <- get_consensus_1()[[2]]
-
-                labs1 <- list()
-                cols <- iwanthue(input$clusters - 1)
-                for(i in 1:(input$clusters - 1)) {
-                    col <- cols[i]
-                    ind <- unlist(strsplit(as.character(d1[i, ]), " "))
-                    for(j in ind) {
-                        labs1[[j]] <- paste0("<font color=\"", col, "\">", j, "</font>")
-                    }
-                }
-                labs <- paste0("<br/><font size=\"3\">Colours correspond to clusters obtained by clustering the data by <b>",
-                               input$clusters - 1, "</b> clusters</font><br/>")
-                labs <- c(labs, "<br/>")
-                for(i in 1:input$clusters) {
-                    ind <- unlist(strsplit(as.character(d[i, ]), " "))
-                    for(j in ind) {
-                        labs <- c(labs, labs1[[j]])
-                    }
-                    labs <- c(labs, c("<br/>", "<hr>"))
-                }
-
-                HTML(paste0(labs))
-            })
+            ## DOWNLOAD LINKS
 
             output$labs <- downloadHandler(
                 filename = function() {
                     paste0("k-", input$clusters, "-labels-", filename, ".csv")
                 },
                 content = function(file) {
-                    hc <- get_consensus()[[3]]
-                    clusts <- cutree(hc, k = input$clusters)
-                    if(with_svm) {
-                        clusts <- c(clusts, svm.prediction)
-                    }
-                    out <- data.frame(cell = cell.names,
-                                      cluster = clusts)
+                    out <- data.frame(new.labels = new.labels, original.labels = original.labels)
                     write.table(out, file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
