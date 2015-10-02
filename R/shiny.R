@@ -1,5 +1,7 @@
 run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names, study.cell.names) {
 
+    ## define UI parameters
+
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
 
@@ -14,19 +16,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
     plot.height <- 800
     plot.height.small <- 300
 
-    cell.names <<- cell.names
-    study.cell.names <<- study.cell.names
-    original.labels <<- NULL
-    new.labels <<- NULL
+    ## define server global variables
 
-    de.res <<- NULL
-    mark.res <<- NULL
-    outl.res <<- list()
+    values <- reactiveValues()
 
     if(dim(study.dataset)[2] > 0) {
-        with_svm <<- TRUE
+        with_svm <- TRUE
     } else {
-        with_svm <<- FALSE
+        with_svm <- FALSE
     }
 
     shinyApp(
@@ -103,60 +100,60 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 do.call(tabsetPanel, myTabs)
             })
 
-            ## REACTIVE PANELS
+            ## main reactive function for extraction of precalculated variables
 
-            update_clustering <- reactive({
+            update_clustering <- observe({
                 res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
                                       as.numeric(cons.table[ , 3]) == input$clusters, 4][[1]]
                 res1 <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
                                       as.numeric(cons.table[ , 3]) == (input$clusters - 1), 4][[1]]
-                input.consensus <<- res[[1]]
-                input.labels <<- res[[2]]
-                input.labels1 <<- res1[[2]]
-                input.hc <<- res[[3]]
-                input.clusts <<- cutree(input.hc, input$clusters)
-                input.cell.order <<- order.dendrogram(as.dendrogram(input.hc))
-                input.silh <<- res[[4]]
-                cell.names <<- cell.names[input.cell.order]
-                study.cell.names <<- study.cell.names
-                colnames(dataset) <<- input.clusts
-                dataset <<- dataset[ , input.cell.order]
 
-                original.labels <<- cell.names
-                new.labels <<- reindex_clusters(colnames(dataset))
+                values$consensus <- res[[1]]
+                values$labels <- res[[2]]
+                values$labels1 <- res1[[2]]
+                values$hc <- res[[3]]
+                values$silh <- res[[4]]
 
-                col.gaps <<- as.numeric(colnames(dataset))
-                col.gaps <<- which(diff(col.gaps) != 0)
+                clusts <- cutree(values$hc, input$clusters)
+                cell.order <- order.dendrogram(as.dendrogram(values$hc))
+
+                d <- dataset
+                colnames(d) <- clusts
+                d <- d[ , cell.order]
+                values$original.labels <- cell.names[cell.order]
+                values$new.labels <- reindex_clusters(colnames(d))
+                colnames(d) <- values$new.labels
+                values$dataset <- d
+
+                values$col.gaps <- which(diff(as.numeric(colnames(d))) != 0)
             })
 
+            ## REACTIVE PANELS
+
             output$consensus <- renderPlot({
-                update_clustering()
                 withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(input.consensus,
+                    pheatmap(values$consensus,
                              color = colour.pallete,
-                             cluster_rows = input.hc,
+                             cluster_rows = values$hc,
                              cutree_rows = input$clusters,
                              cutree_cols = input$clusters)
                 })
             }, height = plot.height, width = plot.width)
 
             output$silh <- renderPlot({
-                update_clustering()
                 withProgress(message = 'Plotting...', value = 0, {
-                    plot(input.silh, col = "black")
+                    plot(values$silh, col = "black")
                 })
             }, height = plot.height, width = plot.width)
 
             output$labels <- renderUI({
-                update_clustering()
-
                 labs1 <- list()
                 cols <- iwanthue(input$clusters - 1)
                 for(i in 1:(input$clusters - 1)) {
                     col <- cols[i]
-                    ind <- unlist(strsplit(as.character(input.labels1[i, ]), " "))
+                    ind <- unlist(strsplit(as.character(values$labels1[i, ]), " "))
                     for(j in ind) {
                         labs1[[j]] <- paste0("<font color=\"", col, "\">", j, "</font>")
                     }
@@ -166,7 +163,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                                input$clusters - 1, "</b> clusters</font><br/>")
                 labs <- c(labs, "<br/>")
                 for(i in 1:input$clusters) {
-                    ind <- unlist(strsplit(as.character(input.labels[i, ]), " "))
+                    ind <- unlist(strsplit(as.character(values$labels[i, ]), " "))
                     for(j in ind) {
                         labs <- c(labs, labs1[[j]])
                     }
@@ -177,15 +174,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             })
 
             output$matrix <- renderPlot({
-                update_clustering()
                 withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(dataset,
+                    pheatmap(values$dataset,
                              color = colour.pallete,
                              kmeans_k = 100,
                              cluster_cols = F,
                              show_rownames = F,
                              show_colnames = F,
-                             gaps_col = col.gaps,
+                             gaps_col = values$col.gaps,
                              main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
                                      Only the values of the cluster centers are shown.")
                 })
@@ -195,9 +191,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             get_svm <- eventReactive(input$svm, {
                 withProgress(message = 'Running SVM...', value = 0, {
-                    update_clustering()
-                    prediction <- support_vector_machines1(dataset, study.dataset, "linear")
-                    colnames(study.dataset) <<- prediction
+                    prediction <- support_vector_machines1(values$dataset, study.dataset, "linear")
                     return(prediction)
                 })
             })
@@ -207,26 +201,28 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating DE genes...', value = 0, {
-                    update_clustering()
                     # prepare dataset for plotting
-                    d <- prepare_dataset(dataset, study.dataset)
+                    d <- values$dataset
+                    if(with_svm) {
+                        d <- prepare_dataset(d, study.dataset)
+                    }
                     # define de genes
-                    de.res <<- kruskal_statistics(d, colnames(d))
+                    values$de.res <- kruskal_statistics(d, colnames(d))
                     # check the results of de_genes_main:
                     # global variable de.res
                     validate(
-                        need(try(length(de.res) != 0), "\nUnable to find significantly (p-value < 0.05) differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
+                        need(try(length(values$de.res) != 0), "\nUnable to find significantly (p-value < 0.05) differentially expressed genes from obtained clusters! Please try to change the number of clusters k and run DE analysis again.")
                     )
 
-                    d.param <- de_gene_heatmap_param(head(de.res, 70))
+                    d.param <- de_gene_heatmap_param(head(values$de.res, 70))
 
-                    pheatmap(d[names(head(de.res, 70)), ], color = colour.pallete,
+                    pheatmap(d[names(head(values$de.res, 70)), ], color = colour.pallete,
                              show_colnames = F,
                              cluster_rows = F,
                              cluster_cols = F,
                              annotation_row = d.param$row.ann,
                              annotation_names_row = F,
-                             gaps_col = col.gaps)
+                             gaps_col = values$col.gaps)
                 })
 
             })
@@ -236,50 +232,54 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating Marker genes...', value = 0, {
-                    update_clustering()
                     # prepare dataset for plotting
-                    d <- prepare_dataset(dataset, study.dataset)
+                    d <- values$dataset
+                    if(with_svm) {
+                        d <- prepare_dataset(d, study.dataset)
+                    }
                     # define marker genes
-                    mark.res.plot <- mark_genes_main(d)
+                    values$mark.res <- get_marker_genes(d, as.numeric(colnames(d)))
                     # check the results of mark_genes_main:
                     # global variable mark.res
                     validate(
-                        need(try(dim(mark.res)[1] != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
+                        need(try(dim(values$mark.res)[1] != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
                     )
-                    d.param <- mark_gene_heatmap_param(mark.res.plot)
-                    pheatmap(d[rownames(mark.res.plot), ], color = colour.pallete,
+                    d.param <- mark_gene_heatmap_param(values$mark.res, unique(colnames(d)))
+                    pheatmap(d[rownames(d.param$mark.res.plot), ], color = colour.pallete,
                              show_colnames = F,
                              cluster_rows = F,
                              cluster_cols = F,
                              annotation_row = d.param$row.ann,
                              annotation_names_row = F,
                              gaps_row = d.param$row.gaps,
-                             gaps_col = col.gaps)
+                             gaps_col = values$col.gaps)
                 })
             })
 
             get_outl <- eventReactive(input$get_outliers, {
                 withProgress(message = 'Calculating cell outliers...', value = 0, {
-                    update_clustering()
                     # prepare dataset for plotting
-                    d <- prepare_dataset(dataset, study.dataset)
+                    d <- values$dataset
+                    if(with_svm) {
+                        d <- prepare_dataset(d, study.dataset)
+                    }
 
                     # compute outlier cells
-                    outl_cells_main(d)
+                    values$outl.res <- unlist(outl_cells_main(d))
 
-                    plot(unlist(outl.res),
-                         col = names(unlist(outl.res)),
+                    print(values$outl.res)
+
+                    plot(values$outl.res,
+                         col = names(values$outl.res),
                          type = "p", ylab = "Outliers", xlab = "Cells",
                          pch = 16, cex = 1.1)
-
                 })
-
             })
 
             ## PANELS REACTIVE ON BUTTON CLICK
 
             output$svm_panel <- renderText({
-                svm.prediction <<- get_svm()
+                svm.prediction <- get_svm()
                 "SVM finished!"
             })
 
@@ -302,8 +302,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-labels-", filename, ".csv")
                 },
                 content = function(file) {
-                    out <- data.frame(new.labels = new.labels, original.labels = original.labels)
-                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
+                    write.table(data.frame(new.labels = values$new.labels, original.labels = values$original.labels),
+                                file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
@@ -313,12 +313,10 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     validate(
-                        need(try(!is.null(de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
+                        need(try(!is.null(values$de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
                     )
-                    nams <- names(de.res)
-                    names(de.res) <- NULL
-                    out <- data.frame(gene = nams, p.value = de.res)
-                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
+                    write.table(data.frame(gene = names(values$de.res), p.value = values$de.res),
+                                file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
@@ -328,11 +326,12 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     validate(
-                        need(try(!is.null(mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
+                        need(try(!is.null(values$mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
                     )
-                    out <- data.frame(gene = rownames(mark.res), AUC = mark.res[,1],
-                                      cluster = mark.res[,2])
-                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
+                    write.table(data.frame(gene = rownames(values$mark.res),
+                                           AUC = values$mark.res[,1],
+                                           cluster = values$mark.res[,2]),
+                                file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
@@ -342,11 +341,10 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     validate(
-                        need(try(!is.null(outl.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
+                        need(try(!is.null(values$outl.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
                     )
-                    out <- data.frame(gene = rownames(mark.res), AUC = mark.res[,1],
-                                      cluster = mark.res[,2])
-                    write.table(out, file = file, row.names = F, quote = F, sep = "\t")
+                    write.table(data.frame(cluster = names(values$outl.res), MCD.dist = values$outl.res),
+                                file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 

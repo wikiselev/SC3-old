@@ -11,25 +11,18 @@ reindex_clusters <- function(ordering) {
 }
 
 prepare_dataset <- function(dataset, study.dataset) {
-    if(with_svm) {
-        original.labels <<- c(cell.names, study.cell.names)
-        tmp <- cbind(dataset, study.dataset)
-        cols <- colnames(tmp)
-        inds <- NULL
-        for(i in unique(colnames(dataset))) {
-            inds <- c(inds, which(cols == i))
-        }
-        tmp <- tmp[ , inds]
-        original.labels <<- original.labels[inds]
-        colnames(tmp) <- reindex_clusters(colnames(tmp))
-        new.labels <<- colnames(tmp)
-        return(tmp)
-    } else {
-        original.labels <<- cell.names
-        colnames(dataset) <- reindex_clusters(colnames(dataset))
-        new.labels <<- colnames(dataset)
-        return(dataset)
+    original.labels <<- c(cell.names, study.cell.names)
+    tmp <- cbind(dataset, study.dataset)
+    cols <- colnames(tmp)
+    inds <- NULL
+    for(i in unique(colnames(dataset))) {
+        inds <- c(inds, which(cols == i))
     }
+    tmp <- tmp[ , inds]
+    original.labels <<- original.labels[inds]
+    colnames(tmp) <- reindex_clusters(colnames(tmp))
+    new.labels <<- colnames(tmp)
+    return(tmp)
 }
 
 de_gene_heatmap_param <- function(res) {
@@ -39,31 +32,26 @@ de_gene_heatmap_param <- function(res) {
     return(list(row.ann = row.ann))
 }
 
-mark_genes_main <- function(d) {
-    mark.res <<- get_marker_genes(d, as.numeric(colnames(d)))
-
+mark_gene_heatmap_param <- function(mark.res, labs) {
     mark.res.plot <- NULL
-    for(i in unique(colnames(d))) {
+    for(i in labs) {
         tmp <- mark.res[mark.res[,2] == i, ]
         if(dim(tmp)[1] > 10) {
             mark.res.plot <- rbind(mark.res.plot, tmp[1:10, ])
         }
     }
 
-    return(mark.res.plot)
-}
-
-mark_gene_heatmap_param <- function(mark.res.plot) {
     row.ann <- data.frame(Cluster = factor(mark.res.plot$clusts, levels = unique(mark.res.plot$clusts)))
     rownames(row.ann) <- rownames(mark.res.plot)
 
     row.gaps <- as.numeric(mark.res.plot$clusts)
     row.gaps <- which(diff(row.gaps) != 0)
 
-    return(list(row.ann = row.ann, row.gaps = row.gaps, col.gaps = col.gaps))
+    return(list(mark.res.plot = mark.res.plot, row.ann = row.ann, row.gaps = row.gaps))
 }
 
 outl_cells_main <- function(d) {
+    outl.res <- list()
     for(i in unique(colnames(d))) {
         # reduce p dimensions by using robust PCA
         t <- tryCatch({
@@ -80,7 +68,7 @@ outl_cells_main <- function(d) {
                 message(paste0("No outliers detected in cluster ", i, ". Small number of cells in the cluster."))
                 out <- rep(0, dim(d[ , colnames(d) == i])[2])
                 names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-                outl.res[[i]] <<- out
+                outl.res[[i]] <- out
             } else {
                 df <- ifelse(dim(t@loadings)[2] > 3, 3, dim(t@loadings)[2])
 
@@ -102,17 +90,19 @@ outl_cells_main <- function(d) {
                     # chi-squared distribution with p degrees of freedom
                     outliers <- sqrt(mcd$mah) - sqrt(qchisq(.9999, df = df))
                     outliers[which(outliers < 0)] <- 0
-                    outl.res[[i]] <<- outliers
+                    outl.res[[i]] <- outliers
                 } else {
                     out <- rep(0, dim(d[ , colnames(d) == i])[2])
                     names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-                    outl.res[[i]] <<- out
+                    outl.res[[i]] <- out
                 }
             }
         } else {
             out <- rep(0, dim(d[ , colnames(d) == i])[2])
             names(out) <- rep(i, dim(d[ , colnames(d) == i])[2])
-            outl.res[[i]] <<- out
+            outl.res[[i]] <- out
         }
     }
+    print(outl.res)
+    return(outl.res)
 }
