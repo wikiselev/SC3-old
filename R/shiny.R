@@ -122,10 +122,12 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             })
 
             observe({
-                values$svm.ready <- values$svm &
-                    values$svm.clusters == paste(input$clusters, collapse = "_") &
-                    values$svm.distance == paste(input$distance, collapse = "_") &
-                    values$svm.dimRed == paste(input$dimRed, collapse = "_")
+                if(with_svm) {
+                    values$svm.ready <- values$svm &
+                        values$svm.clusters == paste(input$clusters, collapse = "_") &
+                        values$svm.distance == paste(input$distance, collapse = "_") &
+                        values$svm.dimRed == paste(input$dimRed, collapse = "_")
+                }
             })
 
             ## REACTIVE PANELS
@@ -220,10 +222,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             get_de_genes <- eventReactive(input$get_de_genes, {
                 if(with_svm) {
-                    validate(
-                        need(try(values$svm.ready),
-                             "\nPlease run SVM prediction first!")
-                    )
+                    validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                 }
                 validate(
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
@@ -260,10 +259,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             get_mark_genes <- eventReactive(input$get_mark_genes, {
                 if(with_svm) {
-                    validate(
-                        need(try(values$svm.ready),
-                             "\nPlease run SVM prediction first!")
-                    )
+                    validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                 }
                 validate(
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
@@ -298,10 +294,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             get_outl <- eventReactive(input$get_outliers, {
                 if(with_svm) {
-                    validate(
-                        need(try(values$svm.ready),
-                             "\nPlease run SVM prediction first!")
-                    )
+                    validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                 }
                 withProgress(message = 'Calculating cell outliers...', value = 0, {
                     # prepare dataset for plotting
@@ -343,10 +336,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
                 content = function(file) {
                     if(with_svm) {
-                        validate(
-                            need(try(values$svm.ready),
-                                 "\nPlease run SVM prediction first!")
-                        )
+                        validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                     }
                     if(with_svm) {
                         write.table(data.frame(new.labels = values$new.labels.svm, original.labels = values$original.labels.svm),
@@ -364,10 +354,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     if(with_svm) {
-                        validate(
-                            need(try(values$svm.ready),
-                                 "\nPlease run SVM prediction first!")
-                        )
+                        validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                     }
                     validate(
                         need(try(!is.null(values$de.res)), "\nPlease run differential expression analysis by clicking on \"Get DE genes\" button!")
@@ -383,10 +370,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     if(with_svm) {
-                        validate(
-                            need(try(values$svm.ready),
-                                 "\nPlease run SVM prediction first!")
-                        )
+                        validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                     }
                     validate(
                         need(try(!is.null(values$mark.res)), "\nPlease run marker genes analysis by clicking on \"Get Marker genes\" button!")
@@ -404,10 +388,7 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 },
                 content = function(file) {
                     if(with_svm) {
-                        validate(
-                            need(try(values$svm.ready),
-                                 "\nPlease run SVM prediction first!")
-                        )
+                        validate(need(try(values$svm.ready), "\nPlease run SVM prediction first!"))
                     }
                     validate(
                         need(try(!is.null(values$outl.res)), "\nPlease run cell outlier analysis by using \"Get Cells outliers\" button!")
