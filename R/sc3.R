@@ -201,5 +201,5 @@ sc3 <- function(filename, ks, cell.filter = F) {
     # start a shiny app in a browser window
     run_shiny_app(filename, distances, dimensionality.reductions,
                    cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names, study.cell.names)
+                   dataset, study.dataset, svm.num.cells, cell.names, study.cell.names)
 }

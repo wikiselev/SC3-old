@@ -10,21 +10,6 @@ reindex_clusters <- function(ordering) {
     return(new.index)
 }
 
-prepare_dataset <- function(dataset, study.dataset) {
-    original.labels <<- c(cell.names, study.cell.names)
-    tmp <- cbind(dataset, study.dataset)
-    cols <- colnames(tmp)
-    inds <- NULL
-    for(i in unique(colnames(dataset))) {
-        inds <- c(inds, which(cols == i))
-    }
-    tmp <- tmp[ , inds]
-    original.labels <<- original.labels[inds]
-    colnames(tmp) <- reindex_clusters(colnames(tmp))
-    new.labels <<- colnames(tmp)
-    return(tmp)
-}
-
 de_gene_heatmap_param <- function(res) {
     row.ann <- data.frame("minus.log10.p.value" = -log10(res))
     rownames(row.ann) <- names(res)
@@ -103,6 +88,14 @@ outl_cells_main <- function(d) {
             outl.res[[i]] <- out
         }
     }
-    print(outl.res)
-    return(outl.res)
+
+    nams <- NULL
+    vals <- NULL
+    for(i in 1:length(outl.res)) {
+        vals <- c(vals, outl.res[[i]])
+        nams <- c(nams, names(outl.res[[i]]))
+    }
+    names(vals) <- nams
+
+    return(vals)
 }

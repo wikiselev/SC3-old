@@ -1,4 +1,4 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, working.sample, study.sample, cell.names, study.cell.names) {
+run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, cell.names, study.cell.names) {
 
     ## define UI parameters
 
@@ -22,6 +22,8 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
     if(dim(study.dataset)[2] > 0) {
         with_svm <- TRUE
+        values$svm <- FALSE
+        values$svm.ready <- FALSE
     } else {
         with_svm <- FALSE
     }
@@ -79,30 +81,19 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
         ),
         server = function(input, output, session) {
             output$mytabs = renderUI({
-                if(with_svm) {
-                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
-                                   tabPanel("Silhouette (1)", plotOutput('silh')),
-                                   tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
-                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
-                                   tabPanel("SVM (1+)", textOutput('svm_panel')),
-                                   tabPanel("DE genes (2)", plotOutput('de_genes')),
-                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')),
-                                   tabPanel("Cells outliers (2)", plotOutput('outliers')))
-                } else {
-                    myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
-                                   tabPanel("Silhouette (1)", plotOutput('silh')),
-                                   tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
-                                   tabPanel("Expression Matrix (1)", plotOutput('matrix')),
-                                   tabPanel("DE genes (2)", plotOutput('de_genes')),
-                                   tabPanel("Marker genes (2)", plotOutput('mark_genes')),
-                                   tabPanel("Cells outliers (2)", plotOutput('outliers')))
-                }
+                myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
+                               tabPanel("Silhouette (1)", plotOutput('silh')),
+                               tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
+                               tabPanel("Expression Matrix (1)", plotOutput('matrix')),
+                               tabPanel("DE genes (2)", plotOutput('de_genes')),
+                               tabPanel("Marker genes (2)", plotOutput('mark_genes')),
+                               tabPanel("Cells outliers (2)", plotOutput('outliers')))
                 do.call(tabsetPanel, myTabs)
             })
 
             ## main reactive function for extraction of precalculated variables
 
-            update_clustering <- observe({
+            observe({
                 res <- cons.table[unlist(lapply(dist.opts, function(x){setequal(x, input$distance)})) &
                                       unlist(lapply(dim.red.opts, function(x){setequal(x, input$dimRed)})) &
                                       as.numeric(cons.table[ , 3]) == input$clusters, 4][[1]]
@@ -130,6 +121,13 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 values$col.gaps <- which(diff(as.numeric(colnames(d))) != 0)
             })
 
+            observe({
+                values$svm.ready <- values$svm &
+                    values$svm.clusters == paste(input$clusters, collapse = "_") &
+                    values$svm.distance == paste(input$distance, collapse = "_") &
+                    values$svm.dimRed == paste(input$dimRed, collapse = "_")
+            })
+
             ## REACTIVE PANELS
 
             output$consensus <- renderPlot({
@@ -138,7 +136,9 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                              color = colour.pallete,
                              cluster_rows = values$hc,
                              cutree_rows = input$clusters,
-                             cutree_cols = input$clusters)
+                             cutree_cols = input$clusters,
+                             show_rownames = F,
+                             show_colnames = F)
                 })
             }, height = plot.height, width = plot.width)
 
@@ -189,22 +189,53 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
 
             ## REACTIVE BUTTONS
 
-            get_svm <- eventReactive(input$svm, {
+            observeEvent(input$svm, {
                 withProgress(message = 'Running SVM...', value = 0, {
-                    prediction <- support_vector_machines1(values$dataset, study.dataset, "linear")
-                    return(prediction)
+                    values$dataset.svm <- study.dataset
+
+                    original.labels <- c(values$original.labels, study.cell.names)
+                    colnames(values$dataset.svm) <- support_vector_machines1(values$dataset, study.dataset, "linear")
+
+                    tmp <- cbind(values$dataset, values$dataset.svm)
+                    cols <- colnames(tmp)
+                    inds <- NULL
+                    for(i in unique(colnames(dataset))) {
+                        inds <- c(inds, which(cols == i))
+                    }
+                    tmp <- tmp[ , inds]
+
+                    values$original.labels.svm <- original.labels[inds]
+                    colnames(tmp) <- reindex_clusters(colnames(tmp))
+                    values$new.labels.svm <- colnames(tmp)
+                    values$dataset.svm <- tmp
+
+                    values$col.gaps.svm <- which(diff(as.numeric(colnames(values$dataset.svm))) != 0)
+
+                    values$svm <- TRUE
+                    values$svm.clusters <- paste(input$clusters, collapse = "_")
+                    values$svm.distance <- paste(input$distance, collapse = "_")
+                    values$svm.dimRed <- paste(input$dimRed, collapse = "_")
                 })
             })
 
             get_de_genes <- eventReactive(input$get_de_genes, {
+                if(with_svm) {
+                    validate(
+                        need(try(values$svm.ready),
+                             "\nPlease run SVM prediction first!")
+                    )
+                }
                 validate(
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating DE genes...', value = 0, {
                     # prepare dataset for plotting
-                    d <- values$dataset
                     if(with_svm) {
-                        d <- prepare_dataset(d, study.dataset)
+                        d <- values$dataset.svm
+                        col.gaps <- values$col.gaps.svm
+                    } else {
+                        d <- values$dataset
+                        col.gaps <- values$col.gaps
                     }
                     # define de genes
                     values$de.res <- kruskal_statistics(d, colnames(d))
@@ -222,20 +253,29 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                              cluster_cols = F,
                              annotation_row = d.param$row.ann,
                              annotation_names_row = F,
-                             gaps_col = values$col.gaps)
+                             gaps_col = col.gaps)
                 })
 
             })
 
             get_mark_genes <- eventReactive(input$get_mark_genes, {
+                if(with_svm) {
+                    validate(
+                        need(try(values$svm.ready),
+                             "\nPlease run SVM prediction first!")
+                    )
+                }
                 validate(
                     need(try(!is.null(rownames(dataset))), "\nNo gene names provided in the input expression matrix!")
                 )
                 withProgress(message = 'Calculating Marker genes...', value = 0, {
                     # prepare dataset for plotting
-                    d <- values$dataset
                     if(with_svm) {
-                        d <- prepare_dataset(d, study.dataset)
+                        d <- values$dataset.svm
+                        col.gaps <- values$col.gaps.svm
+                    } else {
+                        d <- values$dataset
+                        col.gaps <- values$col.gaps
                     }
                     # define marker genes
                     values$mark.res <- get_marker_genes(d, as.numeric(colnames(d)))
@@ -252,22 +292,26 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                              annotation_row = d.param$row.ann,
                              annotation_names_row = F,
                              gaps_row = d.param$row.gaps,
-                             gaps_col = values$col.gaps)
+                             gaps_col = col.gaps)
                 })
             })
 
             get_outl <- eventReactive(input$get_outliers, {
+                if(with_svm) {
+                    validate(
+                        need(try(values$svm.ready),
+                             "\nPlease run SVM prediction first!")
+                    )
+                }
                 withProgress(message = 'Calculating cell outliers...', value = 0, {
                     # prepare dataset for plotting
-                    d <- values$dataset
                     if(with_svm) {
-                        d <- prepare_dataset(d, study.dataset)
+                        d <- values$dataset.svm
+                    } else {
+                        d <- values$dataset
                     }
-
                     # compute outlier cells
-                    values$outl.res <- unlist(outl_cells_main(d))
-
-                    print(values$outl.res)
+                    values$outl.res <- outl_cells_main(d)
 
                     plot(values$outl.res,
                          col = names(values$outl.res),
@@ -277,11 +321,6 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
             })
 
             ## PANELS REACTIVE ON BUTTON CLICK
-
-            output$svm_panel <- renderText({
-                svm.prediction <- get_svm()
-                "SVM finished!"
-            })
 
             output$de_genes <- renderPlot({
                 get_de_genes()
@@ -301,9 +340,21 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                 filename = function() {
                     paste0("k-", input$clusters, "-labels-", filename, ".csv")
                 },
+
                 content = function(file) {
-                    write.table(data.frame(new.labels = values$new.labels, original.labels = values$original.labels),
-                                file = file, row.names = F, quote = F, sep = "\t")
+                    if(with_svm) {
+                        validate(
+                            need(try(values$svm.ready),
+                                 "\nPlease run SVM prediction first!")
+                        )
+                    }
+                    if(with_svm) {
+                        write.table(data.frame(new.labels = values$new.labels.svm, original.labels = values$original.labels.svm),
+                                    file = file, row.names = F, quote = F, sep = "\t")}
+                    else{
+                        write.table(data.frame(new.labels = values$new.labels, original.labels = values$original.labels),
+                                    file = file, row.names = F, quote = F, sep = "\t")
+                    }
                 }
             )
 
@@ -312,8 +363,14 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-de-genes-", filename, ".csv")
                 },
                 content = function(file) {
+                    if(with_svm) {
+                        validate(
+                            need(try(values$svm.ready),
+                                 "\nPlease run SVM prediction first!")
+                        )
+                    }
                     validate(
-                        need(try(!is.null(values$de.res)), "\nPlease first run differential expression analysis by using \"Get DE genes\" button!")
+                        need(try(!is.null(values$de.res)), "\nPlease run differential expression analysis by clicking on \"Get DE genes\" button!")
                     )
                     write.table(data.frame(gene = names(values$de.res), p.value = values$de.res),
                                 file = file, row.names = F, quote = F, sep = "\t")
@@ -325,12 +382,18 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-markers-", filename, ".csv")
                 },
                 content = function(file) {
+                    if(with_svm) {
+                        validate(
+                            need(try(values$svm.ready),
+                                 "\nPlease run SVM prediction first!")
+                        )
+                    }
                     validate(
-                        need(try(!is.null(values$mark.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
+                        need(try(!is.null(values$mark.res)), "\nPlease run marker genes analysis by clicking on \"Get Marker genes\" button!")
                     )
                     write.table(data.frame(gene = rownames(values$mark.res),
                                            AUC = values$mark.res[,1],
-                                           cluster = values$mark.res[,2]),
+                                           new.labels = values$mark.res[,2]),
                                 file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
@@ -340,11 +403,22 @@ run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.t
                     paste0("k-", input$clusters, "-outliers-", filename, ".csv")
                 },
                 content = function(file) {
+                    if(with_svm) {
+                        validate(
+                            need(try(values$svm.ready),
+                                 "\nPlease run SVM prediction first!")
+                        )
+                    }
                     validate(
-                        need(try(!is.null(values$outl.res)), "\nPlease first run marker genes analysis by using \"Get Marker genes\" button!")
+                        need(try(!is.null(values$outl.res)), "\nPlease run cell outlier analysis by using \"Get Cells outliers\" button!")
                     )
-                    write.table(data.frame(cluster = names(values$outl.res), MCD.dist = values$outl.res),
-                                file = file, row.names = F, quote = F, sep = "\t")
+                    if(with_svm) {
+                        write.table(data.frame(new.labels = names(values$outl.res), original.labels = values$original.labels.svm, MCD.dist = values$outl.res),
+                                    file = file, row.names = F, quote = F, sep = "\t")
+                    } else {
+                        write.table(data.frame(new.labels = names(values$outl.res), original.labels = values$original.labels, MCD.dist = values$outl.res),
+                                    file = file, row.names = F, quote = F, sep = "\t")
+                    }
                 }
             )
 
