@@ -13,7 +13,7 @@ To test that the package has been installed successfully please run SC3 on a [pu
 
 ```{R}
 library(SC3)
-sc3(quake_all_fpkm, 3:7, TRUE)
+sc3(quake_all_fpkm, ks = 3:7, cell.filter = TRUE)
 ```
 
 It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
@@ -21,19 +21,20 @@ It should open SC3 in a browser window without providing any error. If there is 
 ### 3. Running SC3
 
 ```{R}
-sc3(dataset, k.min:k.max, cell.filter)
+sc3(dataset, ks = k.min:k.max, cell.filter = FALSE, interactivity = TRUE)
 ```
 
 * __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix
-* __k.min__ is the minimum number of clusters
-* __k.max__ is the maximum number of clusters.
+* __ks__ is a range of the number of clusters that needs to be tested. __k.min__ is the minimum number of clusters (default is 3). __k.max__ is the maximum number of clusters (default is 7).
 * (optional) __cell.filter__ is used to filter cells that express less than 2000 genes (_lowly expressed cells_). By default it is OFF. To switch it ON please use __TRUE__ value as in the __Test run__ above. Should be used if it is not possible to properly cluster original cells - filtering of _lowly expressed cells_ usually makes clustering better.
+* (optional) __interactivity__ defines whether a browser interactive window should be open after all computation is done. By default it is ON. To switch it OFF please use __FALSE__ value. This option can be used to separate clustering calculations from visualisation, e.g. long and time-consuming clustering of really big datasets can be run on a farm cluster and visualisations can be done a personal laptop afterwards. If __interactivity__ is OFF then all clustering results will be saved to "sc3.rds" file. To run interactive visulisation with the precomputed clustering results please use `sc3_interactive(readRDS("sc3.rds"))`.
 
-Example: if you would like to check clustering of your __dataset__ for __k__ from 2 to 5, then you need to run the following:
+Usage example: if you would like to check clustering of your __dataset__ for __ks__ from 2 to 5, then you need to run the following:
 
 ```{R}
-sc3(dataset, 2:5)       # without filtering of lowly expressed cells
-sc3(dataset, 2:5, TRUE) # with filtering of lowly expressed cells
+sc3(dataset, ks = 2:5)                        # without filtering of lowly expressed cells
+sc3(dataset, ks = 2:5, cell.filter = TRUE)    # with filtering of lowly expressed cells
+sc3(dataset, ks = 2:5, interactivity = FALSE) # without interactive visualisation
 ```
 
 ### 4. Input file format
@@ -51,5 +52,5 @@ To run SC3 on an input file containing an expression matrix one need to preproce
 The first row of the expression matrix (with cell labels, e.g. __cell1__, __cell2__, etc.) should contain one fewer field than all other rows. Separators should be either spaces or tabs. If separators are commas (,) then the extension of the file must be .csv. If a path to your input file is "/path/to/input/file/expression-matrix.txt", to run it:
 
 ```{R}
-sc3("/path/to/input/file/expression-matrix.txt", 2:5)
+sc3("/path/to/input/file/expression-matrix.txt", ks = 2:5)
 ```

@@ -1,7 +1,15 @@
-run_shiny_app <- function(filename, distances, dimensionality.reductions, cons.table, dataset, study.dataset, svm.num.cells, cell.names, study.cell.names) {
+sc3_interactive <- function(input.param) {
+    filename <- input.param[[1]]
+    distances <- input.param[[2]]
+    dimensionality.reductions <- input.param[[3]]
+    cons.table <- input.param[[4]]
+    dataset <- input.param[[5]]
+    study.dataset <- input.param[[6]]
+    svm.num.cells <- input.param[[7]]
+    cell.names <- input.param[[8]]
+    study.cell.names <- input.param[[9]]
 
     ## define UI parameters
-
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
     dim.red.opts <- strsplit(unlist(cons.table[,2]), " ")
 

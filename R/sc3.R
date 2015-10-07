@@ -43,7 +43,7 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks, cell.filter = F) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T) {
 
     # initial parameters
     set.seed(1)
@@ -198,8 +198,14 @@ sc3 <- function(filename, ks, cell.filter = F) {
     # stop local cluster
     stopCluster(cl)
 
-    # start a shiny app in a browser window
-    run_shiny_app(filename, distances, dimensionality.reductions,
-                   cbind(all.combinations, cons),
-                   dataset, study.dataset, svm.num.cells, cell.names, study.cell.names)
+    output.param <- list(filename, distances, dimensionality.reductions,
+                         cbind(all.combinations, cons),
+                         dataset, study.dataset, svm.num.cells, cell.names, study.cell.names)
+
+    if(interactivity) {
+        # start a shiny app in a browser window
+        sc3_interactive(output.param)
+    } else {
+        saveRDS(output.param, "sc3.rds")
+    }
 }
