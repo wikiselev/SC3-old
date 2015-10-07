@@ -209,7 +209,7 @@ sc3_interactive <- function(input.param) {
                     tmp <- cbind(values$dataset, values$dataset.svm)
                     cols <- colnames(tmp)
                     inds <- NULL
-                    for(i in unique(colnames(dataset))) {
+                    for(i in unique(colnames(tmp))) {
                         inds <- c(inds, which(cols == i))
                     }
                     tmp <- tmp[ , inds]
