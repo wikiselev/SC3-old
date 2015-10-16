@@ -43,11 +43,10 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000) {
 
     # initial parameters
     set.seed(1)
-    svm.num.cells <- 1000
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
 
@@ -63,7 +62,7 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T) {
     }
 
     # gene filter
-    if(deparse(substitute(filename)) != "bernstein") {
+    if(deparse(substitute(filename)) != "bernstein" & deparse(substitute(filename)) != "kedar.norm") {
         dataset <- gene_filter(dataset)
     }
 
@@ -206,6 +205,6 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T) {
         # start a shiny app in a browser window
         sc3_interactive(output.param)
     } else {
-        saveRDS(output.param, "sc3.rds")
+        saveRDS(output.param, paste0(filename, ".rds"))
     }
 }
