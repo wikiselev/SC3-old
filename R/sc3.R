@@ -11,15 +11,16 @@ get_data <- function(name) {
     }
 }
 
-cell_filter <- function(data) {
-    # more than 2000 genes have to be expressed in each cell
+cell_filter <- function(data, cell.filter.genes) {
+    # more than cell.filter.genes have to be expressed in each cell
+    # by default cell.filter.genes = 2000
     # this criterium is taken from bernstein paper:
     # Patel, A. P. et al. Single-cell RNA-seq highlights intratumoral heterogeneity
     # in primary glioblastoma. Science 344, 1396–1401 (2014).
     cat("Cell filtering...\n")
-    data <- data[ , colSums(data > 1e-2) > 2000]
+    data <- data[ , colSums(data > 1e-2) > cell.filter.genes]
     if(dim(data)[2] == 0) {
-        cat("Your dataset did not pass cell filter (more than 2000 genes have to be expressed in each cell)! Stopping now...")
+        cat(paste0("Your dataset did not pass cell filter (more than ", cell.filter.genes, " genes have to be expressed in each cell)! Stopping now..."))
         return()
     } else {
         return(data)
@@ -43,7 +44,7 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000) {
 
     # initial parameters
     set.seed(1)
@@ -58,7 +59,7 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.
 
     # cell filter
     if(cell.filter) {
-        dataset <- cell_filter(dataset)
+        dataset <- cell_filter(dataset, cell.filter.genes)
     }
 
     # gene filter
