@@ -79,7 +79,7 @@ sc3_interactive <- function(input.param) {
                 p("\n\n"),
                 downloadLink('de', label = "Save DE genes"),
                 p("\n\n"),
-                downloadLink('markers', label = "Save cluster markers"),
+                downloadLink('markers', label = "Save Marker genes"),
                 p("\n\n"),
                 downloadLink('outl', label = "Save cell outliers")
             ),
@@ -385,6 +385,7 @@ sc3_interactive <- function(input.param) {
                     )
                     write.table(data.frame(gene = rownames(values$mark.res),
                                            AUC = values$mark.res[,1],
+                                           p.value = values$mark.res[,3],
                                            new.labels = values$mark.res[,2]),
                                 file = file, row.names = F, quote = F, sep = "\t")
                 }

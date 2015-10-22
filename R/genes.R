@@ -7,23 +7,32 @@ getAUC <- function(gene, labels) {
     # Return negatives if there is a tie for cluster with highest average score
     # (by definition this is not cluster specific)
     if(length(posgroup) > 1) {
-        return (c(-1,-1))
+        return (c(-1,-1,1))
     }
     # Create 1/0 vector of truths for predictions, cluster with highest average score vs everything else
     truth <- as.numeric(labels == posgroup)
     #Make predictions & get auc using RCOR package.
     pred <- prediction(score,truth)
     val <- unlist(performance(pred,"auc")@y.values)
-    return(c(val,posgroup))
+    pval <- wilcox.test(score[truth],score[!truth])$p.value
+    return(c(val,posgroup,pval))
 }
 
 get_marker_genes <- function(dataset, labels) {
     geneAUCs <- apply(dataset, 1, getAUC, labels = labels)
-    geneAUCsdf <- data.frame(matrix(unlist(geneAUCs), nrow=length(geneAUCs)/2, byrow=T))
+    geneAUCsdf <- data.frame(matrix(unlist(geneAUCs), nrow=length(geneAUCs)/3, byrow=T))
     rownames(geneAUCsdf) <- rownames(dataset)
-    colnames(geneAUCsdf) <- c("AUC","clusts")
-    geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.8,]
-    geneAUCsdf <- geneAUCsdf[order(geneAUCsdf[,1], decreasing = T),]
+    colnames(geneAUCsdf) <- c("AUC","clusts", "p.value")
+    geneAUCsdf$AUC <- as.numeric(as.character(geneAUCsdf$AUC))
+    geneAUCsdf$clusts <- as.numeric(as.character(geneAUCsdf$clusts))
+    geneAUCsdf$p.value <- as.numeric(as.character(geneAUCsdf$p.value))
+
+    geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
+    geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.05 & !is.na(geneAUCsdf$p.value), ]
+
+    geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.75, ]
+
+    geneAUCsdf <- geneAUCsdf[order(geneAUCsdf$AUC, decreasing = T),]
     return(geneAUCsdf)
 }
 
