@@ -14,7 +14,7 @@ getAUC <- function(gene, labels) {
     #Make predictions & get auc using RCOR package.
     pred <- prediction(score,truth)
     val <- unlist(performance(pred,"auc")@y.values)
-    pval <- wilcox.test(score[truth],score[!truth])$p.value
+    pval <- suppressWarnings(wilcox.test(score[truth],score[!truth])$p.value)
     return(c(val,posgroup,pval))
 }
 
