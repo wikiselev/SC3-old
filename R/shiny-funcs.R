@@ -23,6 +23,8 @@ mark_gene_heatmap_param <- function(mark.res, labs) {
         tmp <- mark.res[mark.res[,2] == i, ]
         if(dim(tmp)[1] > 10) {
             mark.res.plot <- rbind(mark.res.plot, tmp[1:10, ])
+        } else {
+            mark.res.plot <- rbind(mark.res.plot, tmp)
         }
     }
 
