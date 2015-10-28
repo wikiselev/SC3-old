@@ -28,7 +28,7 @@ get_marker_genes <- function(dataset, labels) {
     geneAUCsdf$p.value <- as.numeric(as.character(geneAUCsdf$p.value))
 
     geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
-    geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.05 & !is.na(geneAUCsdf$p.value), ]
+    # geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.05 & !is.na(geneAUCsdf$p.value), ]
 
     geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.75, ]
 
