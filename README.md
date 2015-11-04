@@ -18,9 +18,9 @@ sc3(treutlein, ks = 3:7, cell.filter = TRUE)
 
 It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
 
-### 3. "Build-in" datasets
+### 3. "Built-in" datasets
 
-There are 2 build-in datasets that are automatically loaded with SC3:
+There are two built-in datasets that are automatically loaded with SC3:
 
 | Dataset | Source | __N__ cells | __k__ clusters |
 --- | --- | --- | --- |
@@ -33,8 +33,6 @@ One can explore clusterings of these datasets by running the following commands 
 sc3(treutlein, ks = 3:7)
 sc3(deng, ks = 8:12)
 ```
-
-It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
 
 ### 4. Running SC3
 
