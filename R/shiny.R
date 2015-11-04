@@ -8,6 +8,7 @@ sc3_interactive <- function(input.param) {
     svm.num.cells <- input.param[[7]]
     cell.names <- input.param[[8]]
     study.cell.names <- input.param[[9]]
+    show.original.labels <- input.param[[10]]
 
     ## define UI parameters
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
@@ -142,13 +143,27 @@ sc3_interactive <- function(input.param) {
 
             output$consensus <- renderPlot({
                 withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(values$consensus,
-                             color = colour.pallete,
-                             cluster_rows = values$hc,
-                             cutree_rows = input$clusters,
-                             cutree_cols = input$clusters,
-                             show_rownames = F,
-                             show_colnames = F)
+                    if(show.original.labels) {
+                        ann <- data.frame(Input.Labels = factor(cell.names))
+                        pheatmap(values$consensus,
+                                 color = colour.pallete,
+                                 cluster_rows = values$hc,
+                                 cluster_cols = values$hc,
+                                 cutree_rows = input$clusters,
+                                 cutree_cols = input$clusters,
+                                 annotation_col = ann,
+                                 show_rownames = F,
+                                 show_colnames = F)
+                    } else {
+                        pheatmap(values$consensus,
+                                 color = colour.pallete,
+                                 cluster_rows = values$hc,
+                                 cluster_cols = values$hc,
+                                 cutree_rows = input$clusters,
+                                 cutree_cols = input$clusters,
+                                 show_rownames = F,
+                                 show_colnames = F)
+                    }
                 })
             }, height = plot.height, width = plot.width)
 
@@ -185,15 +200,31 @@ sc3_interactive <- function(input.param) {
 
             output$matrix <- renderPlot({
                 withProgress(message = 'Plotting...', value = 0, {
-                    pheatmap(values$dataset,
-                             color = colour.pallete,
-                             kmeans_k = 100,
-                             cluster_cols = F,
-                             show_rownames = F,
-                             show_colnames = F,
-                             gaps_col = values$col.gaps,
-                             main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
-                                     Only the values of the cluster centers are shown.")
+                    if(show.original.labels) {
+                        ann <- data.frame(Input.Labels = factor(values$original.labels))
+                        t <- values$dataset
+                        colnames(t) <- rownames(ann)
+                        pheatmap(t,
+                                 color = colour.pallete,
+                                 kmeans_k = 100,
+                                 cluster_cols = F,
+                                 show_rownames = F,
+                                 show_colnames = F,
+                                 annotation_col = ann,
+                                 gaps_col = values$col.gaps,
+                                 main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
+                                         Only the values of the cluster centers are shown.")
+                    } else {
+                        pheatmap(values$dataset,
+                                 color = colour.pallete,
+                                 kmeans_k = 100,
+                                 cluster_cols = F,
+                                 show_rownames = F,
+                                 show_colnames = F,
+                                 gaps_col = values$col.gaps,
+                                 main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
+                                 Only the values of the cluster centers are shown.")
+                    }
                 })
             }, height = plot.height, width = plot.width)
 
