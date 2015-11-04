@@ -90,13 +90,13 @@ sc3_interactive <- function(input.param) {
         ),
         server = function(input, output, session) {
             output$mytabs = renderUI({
-                myTabs <- list(tabPanel("Consensus Matrix (1)", plotOutput('consensus')),
-                               tabPanel("Silhouette (1)", plotOutput('silh')),
-                               tabPanel("Cell Labels (1)", div(htmlOutput('labels'), style = "font-size:80%")),
-                               tabPanel("Expression Matrix (1)", plotOutput('matrix')),
-                               tabPanel("DE genes (2)", plotOutput('de_genes')),
-                               tabPanel("Marker genes (2)", plotOutput('mark_genes')),
-                               tabPanel("Cells outliers (2)", plotOutput('outliers')))
+                myTabs <- list(tabPanel("Consensus Matrix", plotOutput('consensus')),
+                               tabPanel("Silhouette", plotOutput('silh')),
+                               tabPanel("Cell Labels", div(htmlOutput('labels'), style = "font-size:80%")),
+                               tabPanel("Expression Matrix", plotOutput('matrix')),
+                               tabPanel("DE genes", plotOutput('de_genes')),
+                               tabPanel("Marker genes", plotOutput('mark_genes')),
+                               tabPanel("Cells outliers", plotOutput('outliers')))
                 do.call(tabsetPanel, myTabs)
             })
 
