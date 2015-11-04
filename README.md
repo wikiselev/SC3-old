@@ -37,21 +37,19 @@ sc3(deng, ks = 8:12)
 ### 4. Running SC3
 
 ```{R}
-sc3(dataset,
-    ks = k.min:k.max,
-    cell.filter = FALSE,
+sc3(dataset, ks = k.min:k.max,
+    cell.filter = FALSE, cell.filter.genes = 2000,
     interactivity = TRUE,
     svm.num.cells = 1000,
-    cell.filter.genes = 2000,
-    show.original.labels = F)
+    show.original.labels = FALSE)
 ```
 
 * __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix
 * __ks__ is a range of the number of clusters that needs to be tested. __k.min__ is the minimum number of clusters (default is 3). __k.max__ is the maximum number of clusters (default is 7).
 * (optional) __cell.filter__ is used to filter cells that express less than __cell.filter.genes__ genes (_lowly expressed cells_). By default it is OFF. To switch it ON please use __TRUE__ value as in the __Test run__ above. Should be used if it is not possible to properly cluster original cells - filtering of _lowly expressed cells_ usually makes clustering better.
+* (optional) __cell.filter.genes__ - if __cell.filter__ is used that this parameter defines the minimum number of genes that have to be expressed in each cell. If there are less, the cell will be removed from the analysis. The default is 2000.
 * (optional) __interactivity__ defines whether a browser interactive window should be open after all computation is done. By default it is ON. To switch it OFF please use __FALSE__ value. This option can be used to separate clustering calculations from visualisation, e.g. long and time-consuming clustering of really big datasets can be run on a farm cluster and visualisations can be done a personal laptop afterwards. If __interactivity__ is OFF then all clustering results will be saved to __dataset__.rds file. To run interactive visulisation with the precomputed clustering results please use `sc3_interactive(readRDS("dataset.rds"))`.
 * (optional) __svm.num.cells__ - if number of cells in your dataset is more than this parameter, then an SVM prediction will be used. The default is 1000.
-* (optional) __cell.filter.genes__ - if __cell.filter__ is used that this parameter defines the minimum number of genes that have to be expressed in each cell. If there are less, the cell will be removed from the analysis. The default is 2000.
 * (optional) __show.original.labels__ - if cell labels in the __dataset__ are not unique, but represent clusters expected from the experiment, they can be visualised by setting __show.original.labels__ to __TRUE__. The default is __FALSE__.
 
 Usage example: if you would like to check clustering of your __dataset__ for __ks__ from 2 to 5, then you need to run the following:
