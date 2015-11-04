@@ -9,19 +9,43 @@ devtools::install_github("hemberg-lab/SC3")
 
 ### 2. Test run
 
-To test that the package has been installed successfully please run SC3 on a [published dataset](http://www.nature.com/nature/journal/v509/n7500/full/nature13173.html):
+To test that the package has been installed successfully please run the following command:
 
 ```{R}
 library(SC3)
-sc3(quake_all_fpkm, ks = 3:7, cell.filter = TRUE)
+sc3(treutlein, ks = 3:7, cell.filter = TRUE)
 ```
 
 It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
 
-### 3. Running SC3
+### 3. "Build-in" datasets
+
+There are 2 build-in datasets that are automatically loaded with SC3:
+
+| Dataset | Source | __N__ cells | __k__ clusters |
+--- | --- | --- | --- |
+| [Treutlein](http://www.nature.com/nature/journal/v509/n7500/full/nature13173.html) | Distal lung epithelium | 80 | 5 |
+| [Deng](http://www.sciencemag.org/content/343/6167/193) | Mouse embryos | 268 | 10 |
+
+One can explore clusterings of these datasets by running the following commands (__ks__ parameter defines a region of __k__ needed to be investigated - see the next paragraph):
 
 ```{R}
-sc3(dataset, ks = k.min:k.max, cell.filter = FALSE, interactivity = TRUE, svm.num.cells = 1000, cell.filter.genes = 2000)
+sc3(treutlein, ks = 3:7)
+sc3(deng, ks = 8:12)
+```
+
+It should open SC3 in a browser window without providing any error. If there is any error please send it to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
+
+### 4. Running SC3
+
+```{R}
+sc3(dataset,
+    ks = k.min:k.max,
+    cell.filter = FALSE,
+    interactivity = TRUE,
+    svm.num.cells = 1000,
+    cell.filter.genes = 2000,
+    show.original.labels = F)
 ```
 
 * __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix
@@ -30,6 +54,7 @@ sc3(dataset, ks = k.min:k.max, cell.filter = FALSE, interactivity = TRUE, svm.nu
 * (optional) __interactivity__ defines whether a browser interactive window should be open after all computation is done. By default it is ON. To switch it OFF please use __FALSE__ value. This option can be used to separate clustering calculations from visualisation, e.g. long and time-consuming clustering of really big datasets can be run on a farm cluster and visualisations can be done a personal laptop afterwards. If __interactivity__ is OFF then all clustering results will be saved to __dataset__.rds file. To run interactive visulisation with the precomputed clustering results please use `sc3_interactive(readRDS("dataset.rds"))`.
 * (optional) __svm.num.cells__ - if number of cells in your dataset is more than this parameter, then an SVM prediction will be used. The default is 1000.
 * (optional) __cell.filter.genes__ - if __cell.filter__ is used that this parameter defines the minimum number of genes that have to be expressed in each cell. If there are less, the cell will be removed from the analysis. The default is 2000.
+* (optional) __show.original.labels__ - if cell labels in the __dataset__ are not unique, but represent clusters expected from the experiment, they can be visualised by setting __show.original.labels__ to __TRUE__. The default is __FALSE__.
 
 Usage example: if you would like to check clustering of your __dataset__ for __ks__ from 2 to 5, then you need to run the following:
 
@@ -39,7 +64,7 @@ sc3(dataset, ks = 2:5, cell.filter = TRUE)    # with filtering of lowly expresse
 sc3(dataset, ks = 2:5, interactivity = FALSE) # without interactive visualisation
 ```
 
-### 4. Input file format
+### 5. Input file format
 
 To run SC3 on an input file containing an expression matrix one need to preprocess the input file so that it looks as follows:
 
