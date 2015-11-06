@@ -78,12 +78,8 @@ The first row of the expression matrix (with cell labels, e.g. __cell1__, __cell
 sc3("/path/to/input/file/expression-matrix.txt", ks = 2:5)
 ```
 
-### Technical details
+### 6. Technical details
 
-SC3 poster:
+[SC3 poster](http://f1000research.com/posters/4-1182)
 
-[http://f1000research.com/posters/4-1182](http://f1000research.com/posters/4-1182)
-
-SC3 presentation:
-
-<script async class="speakerdeck-embed" data-id="922a274fae4b4e4ea08cdea190642bed" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
+[SC3 presentation](https://speakerdeck.com/wikiselev/sc3-consensus-clustering-of-single-cell-rna-seq-data)
