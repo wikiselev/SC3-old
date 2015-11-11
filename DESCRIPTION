@@ -16,6 +16,7 @@ Depends:
     doRNG,
     grid,
     gtable,
+    ggplot2,
     scales,
     RColorBrewer,
     colorspace,

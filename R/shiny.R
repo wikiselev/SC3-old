@@ -23,7 +23,7 @@ sc3_interactive <- function(input.param) {
     colour.pallete <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(median(as.numeric(unlist(cons.table[,3]))))
     plot.width <- 800
     plot.height <- 800
-    plot.height.small <- 300
+    plot.height.small <- 400
 
     ## define server global variables
 
@@ -345,10 +345,28 @@ sc3_interactive <- function(input.param) {
                     # compute outlier cells
                     values$outl.res <- outl_cells_main(d)
 
-                    plot(values$outl.res,
-                         col = names(values$outl.res),
-                         type = "p", ylab = "Outliers", xlab = "Cells",
-                         pch = 16, cex = 1.1)
+                    t <- as.data.frame(values$outl.res)
+                    colnames(t)[1] <- "outl"
+                    t$Cluster <- names(values$outl.res)
+                    t$Cells <- 1:dim(t)[1]
+#                     figure4a <- t
+#                     save(figure4a, file = "figure4a.rda")
+                    t$Cluster <- factor(t$Cluster, levels = unique(as.character(sort(as.numeric(t$Cluster)))))
+                    cols <- iwanthue(length(unique(t$Cluster)))
+                    ggplot(t, aes(x = Cells, y = outl, fill = Cluster, color = Cluster)) +
+                        geom_bar(stat = "identity") +
+                        geom_point() +
+                        scale_fill_manual(values = cols) +
+                        scale_color_manual(values = cols) +
+                        guides(color = FALSE, fill = FALSE) +
+                        labs(y = "Outliers") +
+                        # coord_cartesian(xlim = c(0, length(t$Cells))) +
+                        theme_bw()
+
+#                     plot(values$outl.res,
+#                          col = names(values$outl.res),
+#                          type = "p", ylab = "Outliers", xlab = "Cells",
+#                          pch = 16, cex = 1.1)
                 })
             })
 
