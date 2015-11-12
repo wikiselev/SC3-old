@@ -44,7 +44,7 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, show.original.labels = F, d.region.min = 0.04, d.region.max = 0.07) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, show.original.labels = F, d.region.min = 0.04, d.region.max = 0.07, chisq.quantile = 0.9999) {
 
     # initial parameters
     set.seed(1)
@@ -200,7 +200,9 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.
 
     output.param <- list(filename, distances, dimensionality.reductions,
                          cbind(all.combinations, cons),
-                         dataset, study.dataset, svm.num.cells, cell.names, study.cell.names, show.original.labels)
+                         dataset, study.dataset, svm.num.cells, cell.names,
+                         study.cell.names, show.original.labels,
+                         chisq.quantile)
 
     if(interactivity) {
         # start a shiny app in a browser window

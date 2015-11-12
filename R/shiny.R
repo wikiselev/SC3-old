@@ -9,6 +9,7 @@ sc3_interactive <- function(input.param) {
     cell.names <- input.param[[8]]
     study.cell.names <- input.param[[9]]
     show.original.labels <- input.param[[10]]
+    chisq.quantile <- input.param[[11]]
 
     ## define UI parameters
     dist.opts <- strsplit(unlist(cons.table[,1]), " ")
@@ -343,7 +344,7 @@ sc3_interactive <- function(input.param) {
                         d <- values$dataset
                     }
                     # compute outlier cells
-                    values$outl.res <- outl_cells_main(d)
+                    values$outl.res <- outl_cells_main(d, chisq.quantile)
 
                     t <- as.data.frame(values$outl.res)
                     colnames(t)[1] <- "outl"

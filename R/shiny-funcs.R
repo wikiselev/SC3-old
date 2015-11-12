@@ -37,7 +37,7 @@ mark_gene_heatmap_param <- function(mark.res, labs) {
     return(list(mark.res.plot = mark.res.plot, row.ann = row.ann, row.gaps = row.gaps))
 }
 
-outl_cells_main <- function(d) {
+outl_cells_main <- function(d, chisq.quantile) {
     outl.res <- list()
     for(i in unique(colnames(d))) {
         # reduce p dimensions by using robust PCA
@@ -75,7 +75,7 @@ outl_cells_main <- function(d) {
                     # sqrt(mcd$mah) - sqrt of robust distance
                     # sqrt(qchisq(.95, df = length(mcd$best))) - sqrt of 97.5% quantile of a
                     # chi-squared distribution with p degrees of freedom
-                    outliers <- sqrt(mcd$mah) - sqrt(qchisq(.9999, df = df))
+                    outliers <- sqrt(mcd$mah) - sqrt(qchisq(chisq.quantile, df = df))
                     outliers[which(outliers < 0)] <- 0
                     outl.res[[i]] <- outliers
                 } else {
