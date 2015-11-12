@@ -36,12 +36,19 @@ sc3(deng, ks = 8:12)
 
 ### 4. Running SC3
 
+The SC3 pipeline:
+![](images/pipeline.png)
+
+To run SC3 please use the following function:
+
 ```{R}
 sc3(dataset, ks = k.min:k.max,
     cell.filter = FALSE, cell.filter.genes = 2000,
     interactivity = TRUE,
     svm.num.cells = 1000,
-    show.original.labels = FALSE)
+    show.original.labels = FALSE,
+    d.region.min = 0.04,
+    d.region.max = 0.07)
 ```
 
 * __dataset__ is either an R matrix / data.frame / data.table object OR a path to your input file containing an expression matrix.
@@ -51,6 +58,8 @@ sc3(dataset, ks = k.min:k.max,
 * (optional) __interactivity__ defines whether a browser interactive window should be open after all computation is done. By default it is ON. To switch it OFF please use __FALSE__ value. This option can be used to separate clustering calculations from visualisation, e.g. long and time-consuming clustering of really big datasets can be run on a computing cluster and visualisations can be done using a personal laptop afterwards. If __interactivity__ is OFF then all clustering results will be saved to __dataset__.rds file. To run interactive visulisation with the precomputed clustering results please use `sc3_interactive(readRDS("dataset.rds"))`.
 * (optional) __svm.num.cells__ - if number of cells in your dataset is greater than this parameter, then an SVM prediction will be used. The default is 1000.
 * (optional) __show.original.labels__ - if cell labels in the __dataset__ are not unique, but represent clusters expected from the experiment, they can be visualised by setting __show.original.labels__ to __TRUE__. The default is __FALSE__.
+* (optional) __d.region.min__ - lower boundary of the optimum region of __d__. The default is 0.04.
+* (optional) __d.region.max__ - upper boundary of the optimum region of __d__. The default is 0.07.
 
 Usage example: if you would like to check clustering of your __dataset__ for __ks__ from 2 to 5, then you need to run the following:
 

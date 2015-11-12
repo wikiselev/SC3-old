@@ -44,7 +44,7 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, show.original.labels = F) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, show.original.labels = F, d.region.min = 0.04, d.region.max = 0.07) {
 
     # initial parameters
     set.seed(1)
@@ -98,7 +98,7 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.
 
     # define number of cells and region of dimensions
     n.cells <- dim(dataset)[2]
-    n.dim <- floor(0.04 * n.cells) : ceiling(0.07 * n.cells)
+    n.dim <- floor(d.region.min * n.cells) : ceiling(d.region.max * n.cells)
 
     # for large datasets restrict the region of dimensions to 15
     if(length(n.dim) > 15) {
