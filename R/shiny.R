@@ -389,7 +389,7 @@ sc3_interactive <- function(input.param) {
 
             output$labs <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-labels-", filename, ".csv")
+                    paste0("k-", input$clusters, "-labels-", filename, ".xls")
                 },
 
                 content = function(file) {
@@ -408,7 +408,7 @@ sc3_interactive <- function(input.param) {
 
             output$de <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-de-genes-", filename, ".csv")
+                    paste0("k-", input$clusters, "-de-genes-", filename, ".xls")
                 },
                 content = function(file) {
                     if(with_svm) {
@@ -424,7 +424,7 @@ sc3_interactive <- function(input.param) {
 
             output$markers <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-markers-", filename, ".csv")
+                    paste0("k-", input$clusters, "-markers-", filename, ".xls")
                 },
                 content = function(file) {
                     if(with_svm) {
@@ -433,17 +433,17 @@ sc3_interactive <- function(input.param) {
                     validate(
                         need(try(!is.null(values$mark.res)), "\nPlease run marker genes analysis by clicking on \"Get Marker genes\" button!")
                     )
-                    write.table(data.frame(gene = rownames(values$mark.res),
-                                           AUC = values$mark.res[,1],
-                                           p.value = values$mark.res[,3],
-                                           new.labels = values$mark.res[,2]),
+                    write.table(data.frame(new.labels = values$mark.res[,2],
+                                           gene = rownames(values$mark.res),
+                                           AUROC = values$mark.res[,1]),
+                                           # p.value = values$mark.res[,3]),
                                 file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
 
             output$outl <- downloadHandler(
                 filename = function() {
-                    paste0("k-", input$clusters, "-outliers-", filename, ".csv")
+                    paste0("k-", input$clusters, "-outliers-", filename, ".xls")
                 },
                 content = function(file) {
                     if(with_svm) {

@@ -27,13 +27,22 @@ get_marker_genes <- function(dataset, labels) {
     geneAUCsdf$clusts <- as.numeric(as.character(geneAUCsdf$clusts))
     geneAUCsdf$p.value <- as.numeric(as.character(geneAUCsdf$p.value))
 
-    geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
+    # geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
     # geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.05 & !is.na(geneAUCsdf$p.value), ]
+    # suppress p-values for the moment
+    geneAUCsdf <- geneAUCsdf[ , c(1:2)]
 
     geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.75, ]
 
-    geneAUCsdf <- geneAUCsdf[order(geneAUCsdf$AUC, decreasing = T),]
-    return(geneAUCsdf)
+    d <- NULL
+    for(i in sort(unique(geneAUCsdf$clusts))) {
+        tmp <- geneAUCsdf[geneAUCsdf$clusts == i, ]
+        tmp <- tmp[order(tmp$AUC, decreasing = T),]
+        d <- rbind(d, tmp)
+    }
+
+    colnames(d) <- c("AUC","clusts")
+    return(d)
 }
 
 kruskal_statistics <- function(dataset, labels) {
