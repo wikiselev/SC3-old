@@ -81,7 +81,7 @@ sc3_interactive <- function(input.param) {
                             p("\n\nRun Marker genes analysis first."),
                             selectInput("cluster", "Choose a cluster:",
                                         c("None" = "NULL")),
-                            actionButton("go", label = "Go to Webgestalt"),
+                            actionButton("GO", label = "Go to Webgestalt"),
                             p(" (will open in Firefox)"),
 
                             h4("4. Save results"),
@@ -390,11 +390,10 @@ sc3_interactive <- function(input.param) {
                 })
             })
 
-            run_go <- observeEvent(input$go, {
+            observeEvent(input$GO, {
                 validate(
                     need(try(!is.null(values$mark.res)), "\nPlease run marker genes analysis by clicking on \"Get Marker genes\" button!")
                 )
-                RSelenium::startServer()
                 open_webgestalt_go(rownames(values$mark.res[values$mark.res[,2] == input$cluster, ]))
             })
 

@@ -50,6 +50,7 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.
     set.seed(1)
     distances <- c("euclidean", "pearson", "spearman")
     dimensionality.reductions <- c("pca", "spectral")
+    RSelenium::startServer()
 
     # get input data
     dataset <- get_data(filename)
