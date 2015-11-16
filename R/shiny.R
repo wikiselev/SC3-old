@@ -43,50 +43,61 @@ sc3_interactive <- function(input.param) {
             headerPanel(
                 paste0("Clustering of ", filename)
             ),
-            sidebarPanel(
-                h4("1. Clustering"),
-                sliderInput("clusters", label = "Number of clusters k",
-                            min = min(as.numeric(unlist(cons.table[,3]))) + 1,
-                            max = max(as.numeric(unlist(cons.table[,3]))),
-                            value = median(as.numeric(unlist(cons.table[,3]))),
-                            step = 1,
-                            animate = animationOptions(interval = 2000, loop = F)),
+            fluidRow(
+                column(3,
+                       wellPanel(
+                            h4("1. Clustering"),
+                            sliderInput("clusters", label = "Number of clusters k",
+                                        min = min(as.numeric(unlist(cons.table[,3]))) + 1,
+                                        max = max(as.numeric(unlist(cons.table[,3]))),
+                                        value = median(as.numeric(unlist(cons.table[,3]))),
+                                        step = 1,
+                                        animate = animationOptions(interval = 2000, loop = F)),
 
-                checkboxGroupInput("distance", label = "Distance metrics",
-                                   choices = distances,
-                                   selected = distances),
+                            checkboxGroupInput("distance", label = "Distance metrics",
+                                               choices = distances,
+                                               selected = distances),
 
-                checkboxGroupInput("dimRed", label = "Dimensionality reduction",
-                                   choices = dimensionality.reductions,
-                                   selected = dimensionality.reductions),
+                            checkboxGroupInput("dimRed", label = "Dimensionality reduction",
+                                               choices = dimensionality.reductions,
+                                               selected = dimensionality.reductions),
 
-                if(with_svm) {
-                    h4("1+. SVM")},
-                if(with_svm) {
-                    p("Press this button when you have found the best clustering\n\n")},
-                if(with_svm) {
-                    actionButton("svm", label = "Run SVM")},
+                            if(with_svm) {
+                                h4("1+. SVM")},
+                            if(with_svm) {
+                                p("Press this button when you have found the best clustering\n\n")},
+                            if(with_svm) {
+                                actionButton("svm", label = "Run SVM")},
 
-                h4("2. Analysis"),
-                p("\n\n"),
-                actionButton("get_de_genes", label = "Get DE genes"),
-                p("\n\n"),
-                actionButton("get_mark_genes", label = "Get Marker genes"),
-                p("\n\n"),
-                actionButton("get_outliers", label = "Get Cells outliers"),
+                            h4("2. Gene/Cell Analysis"),
+                            p("\n\nOpen a corresponding panel first, then press a button:"),
+                            actionButton("get_de_genes", label = "Get DE genes"),
+                            p("\n\n"),
+                            actionButton("get_mark_genes", label = "Get Marker genes"),
+                            p("\n\n"),
+                            actionButton("get_outliers", label = "Get Cells outliers"),
 
-                h4("3. Save results"),
-                p("\n\n"),
-                downloadLink('labs', label = "Save cell labels"),
-                p("\n\n"),
-                downloadLink('de', label = "Save DE genes"),
-                p("\n\n"),
-                downloadLink('markers', label = "Save Marker genes"),
-                p("\n\n"),
-                downloadLink('outl', label = "Save cell outliers")
-            ),
-            mainPanel(
-                uiOutput('mytabs')
+                            h4("3. GO Analysis"),
+                            p("\n\nRun Marker genes analysis first."),
+                            selectInput("cluster", "Choose a cluster:",
+                                        c("None" = "NULL")),
+                            actionButton("go", label = "Go to Webgestalt"),
+                            p(" (will open in Firefox)"),
+
+                            h4("4. Save results"),
+                            p("\n\n"),
+                            downloadLink('labs', label = "Save cell labels"),
+                            p("\n\n"),
+                            downloadLink('de', label = "Save DE genes"),
+                            p("\n\n"),
+                            downloadLink('markers', label = "Save Marker genes"),
+                            p("\n\n"),
+                            downloadLink('outl', label = "Save cell outliers")
+                       )
+                ),
+                column(9,
+                       uiOutput('mytabs')
+                )
             )
         ),
         server = function(input, output, session) {
@@ -138,6 +149,14 @@ sc3_interactive <- function(input.param) {
                         values$svm.distance == paste(input$distance, collapse = "_") &
                         values$svm.dimRed == paste(input$dimRed, collapse = "_")
                 }
+            })
+
+            observe({
+                if(!is.null(values$mark.res)) {
+                    clusts <- unique(colnames(values$dataset))
+                    updateSelectInput(session, "cluster", choices = clusts)
+                }
+
             })
 
             ## REACTIVE PANELS
@@ -369,6 +388,14 @@ sc3_interactive <- function(input.param) {
 #                          type = "p", ylab = "Outliers", xlab = "Cells",
 #                          pch = 16, cex = 1.1)
                 })
+            })
+
+            run_go <- observeEvent(input$go, {
+                validate(
+                    need(try(!is.null(values$mark.res)), "\nPlease run marker genes analysis by clicking on \"Get Marker genes\" button!")
+                )
+                RSelenium::startServer()
+                open_webgestalt_go(rownames(values$mark.res[values$mark.res[,2] == input$cluster, ]))
             })
 
             ## PANELS REACTIVE ON BUTTON CLICK

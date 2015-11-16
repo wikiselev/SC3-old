@@ -101,3 +101,20 @@ outl_cells_main <- function(d, chisq.quantile) {
 
     return(vals)
 }
+
+open_webgestalt_go <- function(genes) {
+    remDr <- remoteDriver(remoteServerAddr = "localhost"
+                          , port = 4444
+                          , browserName = "firefox"
+    )
+    remDr$open()
+    remDr$navigate("http://bioinfo.vanderbilt.edu/webgestalt/login.php")
+    webElem <- remDr$findElement(using = 'id', value = "email")
+    webElem$sendKeysToElement(list("vk6@sanger.ac.uk"))
+    webElem <- remDr$findElement(using = 'name', "remember")
+    webElem$clickElement()
+    webElem <- remDr$findElement(using = 'name', "submit")
+    webElem$clickElement()
+    webElem <- remDr$findElement(using = 'name', "pastefile")
+    webElem$sendKeysToElement(as.list(paste0(genes, "\n")))
+}

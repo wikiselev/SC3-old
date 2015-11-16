@@ -23,5 +23,6 @@ Depends:
     ROCR,
     cluster,
     robustbase,
-    rrcov
+    rrcov,
+    RSelenium
 LazyData: TRUE
