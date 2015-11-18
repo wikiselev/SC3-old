@@ -5,6 +5,8 @@ Start R and then type:
 ```{R}
 install.packages("devtools")
 devtools::install_github("hemberg-lab/SC3")
+library(SC3)
+RSelenium::checkForServer()
 ```
 
 ### 2. Test run
