@@ -1,3 +1,17 @@
+### NEWS
+
+SC3 (Single-Cell Consensus Clustering) is an interactive tool for the unsupervised clustering of cells from single cell RNA-Seq experiments.
+
+Please keep in mind that this is a developmental version of SC3 and it may contain some bugs. We are in the process of submitting SC3 to Bioconductor. Once it is done we will provide a link to it here. If you have any problems with the installation or running SC3, please contact [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
+
+We are also in the process of submitting the manuscript, describing SC3, to a journal. Meanwhile, if you need more technical details of the tool, please send a request to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk) and he will share the technical part of the manuscript with you.
+
+There is also a poster and a presentation available (note, that they are already a couple of months old):
+
+[SC3 poster](http://f1000research.com/posters/4-1182)
+
+[SC3 presentation](https://speakerdeck.com/wikiselev/sc3-consensus-clustering-of-single-cell-rna-seq-data)
+
 ### 1. Installation
 
 Start R and then type:
@@ -90,9 +104,3 @@ The first row of the expression matrix (with cell labels, e.g. __cell1__, __cell
 ```{R}
 sc3("/path/to/input/file/expression-matrix.txt", ks = 2:5)
 ```
-
-### 6. Technical details
-
-[SC3 poster](http://f1000research.com/posters/4-1182)
-
-[SC3 presentation](https://speakerdeck.com/wikiselev/sc3-consensus-clustering-of-single-cell-rna-seq-data)
