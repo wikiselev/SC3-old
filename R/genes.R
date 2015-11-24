@@ -14,7 +14,7 @@ getAUC <- function(gene, labels) {
     #Make predictions & get auc using RCOR package.
     pred <- prediction(score,truth)
     val <- unlist(performance(pred,"auc")@y.values)
-    pval <- suppressWarnings(wilcox.test(score[truth],score[!truth])$p.value)
+    pval <- suppressWarnings(wilcox.test(score[truth == 1],score[truth == 0])$p.value)
     return(c(val,posgroup,pval))
 }
 
@@ -27,12 +27,10 @@ get_marker_genes <- function(dataset, labels) {
     geneAUCsdf$clusts <- as.numeric(as.character(geneAUCsdf$clusts))
     geneAUCsdf$p.value <- as.numeric(as.character(geneAUCsdf$p.value))
 
-    # geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
-    # geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.05 & !is.na(geneAUCsdf$p.value), ]
-    # suppress p-values for the moment
-    geneAUCsdf <- geneAUCsdf[ , c(1:2)]
+    geneAUCsdf$p.value <- p.adjust(geneAUCsdf$p.value)
+    geneAUCsdf <- geneAUCsdf[geneAUCsdf$p.value < 0.01 & !is.na(geneAUCsdf$p.value), ]
 
-    geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.75, ]
+    geneAUCsdf <- geneAUCsdf[geneAUCsdf$AUC > 0.85, ]
 
     d <- NULL
     for(i in sort(unique(geneAUCsdf$clusts))) {
@@ -41,7 +39,7 @@ get_marker_genes <- function(dataset, labels) {
         d <- rbind(d, tmp)
     }
 
-    colnames(d) <- c("AUC","clusts")
+    colnames(d) <- c("AUC","clusts","p.value")
     return(d)
 }
 

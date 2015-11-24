@@ -461,8 +461,8 @@ sc3_interactive <- function(input.param) {
                     )
                     write.table(data.frame(new.labels = values$mark.res[,2],
                                            gene = rownames(values$mark.res),
-                                           AUROC = values$mark.res[,1]),
-                                           # p.value = values$mark.res[,3]),
+                                           AUROC = values$mark.res[,1],
+                                           p.value = values$mark.res[,3]),
                                 file = file, row.names = F, quote = F, sep = "\t")
                 }
             )
