@@ -1,6 +1,6 @@
 ### NEWS
 
-SC3 (Single-Cell Consensus Clustering) is an interactive tool for the unsupervised clustering of cells from single cell RNA-Seq experiments.
+SC3 (<b>S</b>ingle-<b>C</b>ell <b>C</b>onsensus <b>C</b>lustering) is an interactive tool (implemented as an R package) for the unsupervised clustering of cells from single cell RNA-Seq experiments.
 
 Please keep in mind that this is a developmental version of SC3 and some of the functionality may not work on some systems (currently completely tested on MacOS only). We are in the process of submitting SC3 to Bioconductor. Once it is done we will provide a link to it here. If you have any problems with the installation or running SC3, please contact [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
 
