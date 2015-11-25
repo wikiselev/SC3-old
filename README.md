@@ -1,5 +1,9 @@
 ### NEWS
 
+_25/11/2015_
+
+Started writing a manual. Meanwhile, if you have any questions on the usage of SC3 please send your questions to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
+
 _24/11/2015_
 
 SC3 (<b>S</b>ingle-<b>C</b>ell <b>C</b>onsensus <b>C</b>lustering) is an interactive tool (implemented as an R package) for the unsupervised clustering of cells from single cell RNA-Seq experiments.
