@@ -46,7 +46,7 @@ get_marker_genes <- function(dataset, labels) {
 kruskal_statistics <- function(dataset, labels) {
     t <- apply(dataset, 1, kruskal.test, g = factor(labels))
     ps <- unlist(lapply(t, "[[", "p.value"))
-    ps <- p.adjust(ps, "bonferroni")
+    ps <- p.adjust(ps)
     ps <- ps[!is.na(ps)]
     ps <- ps[ps < 0.05]
     return(ps[order(ps)])
