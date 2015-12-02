@@ -48,6 +48,6 @@ kruskal_statistics <- function(dataset, labels) {
     ps <- unlist(lapply(t, "[[", "p.value"))
     ps <- p.adjust(ps)
     ps <- ps[!is.na(ps)]
-    ps <- ps[ps < 0.05]
+    ps <- ps[ps < 0.01]
     return(ps[order(ps)])
 }
