@@ -9,11 +9,11 @@
 #' using filter1.
 #' @examples
 #' filter1_params("quake")
-filter1_params <- function(dataset) {
+filter1_params <- function(dataset, fraction) {
     n.cells <- dim(dataset)[2]
 
-    min.cells <- ceiling(0.06*n.cells)
-    max.cells <- ceiling(0.06*n.cells)
+    min.cells <- ceiling(fraction*n.cells)
+    max.cells <- ceiling(fraction*n.cells)
     min.reads <- 2
 
     return(list(min.cells = min.cells, max.cells = max.cells, min.reads = min.reads))

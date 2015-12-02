@@ -27,9 +27,9 @@ cell_filter <- function(data, cell.filter.genes) {
     }
 }
 
-gene_filter <- function(data) {
+gene_filter <- function(data, fraction) {
     cat("Gene filtering and log2-scaling...\n")
-    filter1.params <- filter1_params(data)
+    filter1.params <- filter1_params(data, fraction)
     min.cells <- filter1.params$min.cells
     max.cells <- filter1.params$max.cells
     min.reads <- filter1.params$min.reads
@@ -44,7 +44,7 @@ gene_filter <- function(data) {
     }
 }
 
-sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, show.original.labels = F, d.region.min = 0.04, d.region.max = 0.07, chisq.quantile = 0.9999) {
+sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.cells = 1000, cell.filter.genes = 2000, gene.filter.fraction = 0.06, show.original.labels = F, d.region.min = 0.04, d.region.max = 0.07, chisq.quantile = 0.9999) {
 
     # initial parameters
     set.seed(1)
@@ -65,7 +65,7 @@ sc3 <- function(filename, ks = 3:7, cell.filter = F, interactivity = T, svm.num.
 
     # gene filter
     if(deparse(substitute(filename)) != "bernstein" & deparse(substitute(filename)) != "kedar.norm") {
-        dataset <- gene_filter(dataset)
+        dataset <- gene_filter(dataset, gene.filter.fraction)
     }
 
     # define the output file basename
