@@ -231,9 +231,9 @@ sc3_interactive <- function(input.param) {
                                  show_rownames = F,
                                  show_colnames = F,
                                  annotation_col = ann,
-                                 gaps_col = values$col.gaps,
-                                 main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
-                                         Only the values of the cluster centers are shown.")
+                                 gaps_col = values$col.gaps)
+#                                  main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
+#                                          Only the values of the cluster centers are shown.")
                     } else {
                         pheatmap(values$dataset,
                                  # color = colour.pallete,
@@ -241,9 +241,9 @@ sc3_interactive <- function(input.param) {
                                  cluster_cols = F,
                                  show_rownames = F,
                                  show_colnames = F,
-                                 gaps_col = values$col.gaps,
-                                 main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
-                                 Only the values of the cluster centers are shown.")
+                                 gaps_col = values$col.gaps)
+#                                  main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
+#                                  Only the values of the cluster centers are shown.")
                     }
                 })
             }, height = plot.height, width = plot.width)
