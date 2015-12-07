@@ -225,7 +225,7 @@ sc3_interactive <- function(input.param) {
                         t <- values$dataset
                         colnames(t) <- rownames(ann)
                         pheatmap(t,
-                                 color = colour.pallete,
+                                 # color = colour.pallete,
                                  kmeans_k = 100,
                                  cluster_cols = F,
                                  show_rownames = F,
@@ -236,7 +236,7 @@ sc3_interactive <- function(input.param) {
                                          Only the values of the cluster centers are shown.")
                     } else {
                         pheatmap(values$dataset,
-                                 color = colour.pallete,
+                                 # color = colour.pallete,
                                  kmeans_k = 100,
                                  cluster_cols = F,
                                  show_rownames = F,
@@ -305,7 +305,8 @@ sc3_interactive <- function(input.param) {
 
                     d.param <- de_gene_heatmap_param(head(values$de.res, 70))
 
-                    pheatmap(d[names(head(values$de.res, 70)), ], color = colour.pallete,
+                    pheatmap(d[names(head(values$de.res, 70)), ],
+                             # color = colour.pallete,
                              show_colnames = F,
                              cluster_rows = F,
                              cluster_cols = F,
@@ -340,7 +341,8 @@ sc3_interactive <- function(input.param) {
                         need(try(dim(values$mark.res)[1] != 0), "\nUnable to find significant marker genes from obtained clusters! Please try to change the number of clusters k and run marker analysis again.")
                     )
                     d.param <- mark_gene_heatmap_param(values$mark.res, unique(colnames(d)))
-                    pheatmap(d[rownames(d.param$mark.res.plot), ], color = colour.pallete,
+                    pheatmap(d[rownames(d.param$mark.res.plot), ],
+                             # color = colour.pallete,
                              show_colnames = F,
                              cluster_rows = F,
                              cluster_cols = F,
