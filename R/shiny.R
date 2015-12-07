@@ -224,7 +224,7 @@ sc3_interactive <- function(input.param) {
                         ann <- data.frame(Input.Labels = factor(values$original.labels))
                         t <- values$dataset
                         colnames(t) <- rownames(ann)
-                        pheatmap(t,
+                        pheatmap(log2(t+1),
                                  color = colour.pallete,
                                  kmeans_k = 100,
                                  cluster_cols = F,
@@ -235,7 +235,7 @@ sc3_interactive <- function(input.param) {
                                  main = "Expression matrix is log2 scaled and clustered in 100 clusters by kmeans.
                                          Only the values of the cluster centers are shown.")
                     } else {
-                        pheatmap(values$dataset,
+                        pheatmap(log2(values$dataset+1),
                                  color = colour.pallete,
                                  kmeans_k = 100,
                                  cluster_cols = F,
