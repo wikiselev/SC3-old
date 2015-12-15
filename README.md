@@ -111,6 +111,6 @@ The first row of the expression matrix (with cell labels, e.g. __cell1__, __cell
 sc3("/path/to/input/file/expression-matrix.txt", ks = 2:5)
 ```
 
-### 6. Licence
+### 6. License
 
 GPL-3
