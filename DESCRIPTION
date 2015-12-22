@@ -24,5 +24,6 @@ Depends:
     cluster,
     robustbase,
     rrcov,
-    RSelenium
+    RSelenium,
+    pheatmap
 LazyData: TRUE
