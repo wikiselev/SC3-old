@@ -381,7 +381,7 @@ sc3_interactive <- function(input.param) {
                         scale_fill_manual(values = cols) +
                         scale_color_manual(values = cols) +
                         guides(color = FALSE, fill = FALSE) +
-                        labs(y = "Outliers") +
+                        labs(y = "Outlier score") +
                         # coord_cartesian(xlim = c(0, length(t$Cells))) +
                         theme_bw()
 
