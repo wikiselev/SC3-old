@@ -1,5 +1,9 @@
 ### NEWS
 
+_06/01/2015_
+
+SC3 is under review at Bioconductor. This GitHub package will not be updated anymore. Once SC3 is released by Bioconudctor I will post a link to it here. All further updates will be via Bioconductor.
+
 _25/11/2015_
 
 Started writing a manual. Meanwhile, if you have any questions on the usage of SC3 please send your questions to [Vladimir Kiselev](mailto:vk6@sanger.ac.uk).
