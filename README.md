@@ -1,5 +1,10 @@
 ### NEWS
 
+_14/01/2015_
+
+SC3 manuscript is submitted and also available on bioRxiv:
+[http://biorxiv.org/content/early/2016/01/13/036558](http://biorxiv.org/content/early/2016/01/13/036558)
+
 _06/01/2015_
 
 SC3 is under review at Bioconductor. This GitHub package will not be updated anymore. Once SC3 is released by Bioconudctor I will post a link to it here. All further updates will be via Bioconductor.
