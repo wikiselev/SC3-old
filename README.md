@@ -2,8 +2,10 @@
 
 _26/01/2015_
 
-This is now officially the OLD version of SC3 and is not maintained anymore. Please update your SC3 package either by reinstalling it from BioConductor or from this GitHub repository (developmental version):
+This is now officially the _OLD_ version of SC3 and is not maintained anymore. The newest version (developmental) can be found and installed from this GitHub repository:  
 [https://github.com/hemberg-lab/SC3](https://github.com/hemberg-lab/SC3)
+
+The current stable version can be installed directly from BioConductor (pacakge name is SC3).
 
 _14/01/2015_
 
